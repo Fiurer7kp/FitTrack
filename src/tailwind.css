@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-black: #0F0F0F;
+  --color-brand-neon: #39FF14;
+  --color-brand-card: #1A1A1A;
+  --color-brand-border: #2D2D2D;
+  --color-brand-danger: #FF3B30;
+
+  --font-heading: "Poppins", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@layer components {
+  .btn-neon {
+    @apply cursor-pointer rounded-xl bg-brand-neon px-4 py-2.5 font-semibold text-brand-black transition hover:brightness-90;
+  }
+  .input {
+    @apply w-full rounded-xl border border-brand-border bg-brand-black px-3.5 py-3 text-white placeholder:text-neutral-500 focus:border-brand-neon focus:outline-none;
+  }
+}

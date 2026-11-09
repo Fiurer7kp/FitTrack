@@ -1,1 +1,81 @@
-<p>login works!</p>
+<div class="flex min-h-screen items-center justify-center px-4 py-10">
+  <div class="w-full max-w-md">
+
+    <!-- Logo y tagline -->
+    <div class="mb-8 flex flex-col items-center text-center">
+      <svg width="56" height="56" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <rect x="2" y="22" width="5" height="12" rx="1.5" fill="#39FF14" />
+        <rect x="33" y="6" width="5" height="12" rx="1.5" fill="#39FF14" />
+        <path d="M7 28h7l6-6 6 2 7-12" stroke="#39FF14" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <h1 class="mt-3 font-heading text-3xl font-bold">
+        Fit<span class="text-brand-neon">Track</span>
+      </h1>
+      <p class="mt-1 text-sm text-neutral-400">Tu progreso, tu mejor versión.</p>
+    </div>
+
+    <!-- Tarjeta del formulario -->
+    <div class="rounded-2xl border border-brand-border bg-brand-card p-6 sm:p-8">
+
+      <!-- Pestañas -->
+      <div class="mb-6 grid grid-cols-2 rounded-xl bg-brand-black p-1 text-sm font-medium">
+        <button type="button" (click)="setMode('login')"
+          class="cursor-pointer rounded-lg py-2"
+          [class]="mode() === 'login' ? 'bg-brand-card text-white' : 'text-neutral-400'">
+          Iniciar sesión
+        </button>
+        <button type="button" (click)="setMode('register')"
+          class="cursor-pointer rounded-lg py-2"
+          [class]="mode() === 'register' ? 'bg-brand-card text-white' : 'text-neutral-400'">
+          Crear cuenta
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+
+        @if (mode() === 'register') {
+          <div>
+            <label for="name" class="mb-1.5 block text-sm text-neutral-300">Nombre</label>
+            <input id="name" type="text" formControlName="name" class="input" placeholder="Tu nombre">
+            @if (showError('name')) {
+              <p class="mt-1.5 text-xs text-brand-danger" role="alert">El nombre es obligatorio.</p>
+            }
+          </div>
+        }
+
+        <div>
+          <label for="email" class="mb-1.5 block text-sm text-neutral-300">Correo</label>
+          <input id="email" type="email" formControlName="email" class="input" placeholder="tu@correo.com">
+          @if (showError('email')) {
+            <p class="mt-1.5 text-xs text-brand-danger" role="alert">
+              @if (form.controls.email.hasError('required')) {
+                El correo es obligatorio.
+              } @else {
+                Escribe un correo válido.
+              }
+            </p>
+          }
+        </div>
+
+        <div>
+          <label for="password" class="mb-1.5 block text-sm text-neutral-300">Contraseña</label>
+          <input id="password" type="password" formControlName="password" class="input" placeholder="Mínimo 8 caracteres">
+          @if (showError('password')) {
+            <p class="mt-1.5 text-xs text-brand-danger" role="alert">
+              @if (form.controls.password.hasError('required')) {
+                La contraseña es obligatoria.
+              } @else {
+                Debe tener al menos 8 caracteres.
+              }
+            </p>
+          }
+        </div>
+
+        <button type="submit" class="btn-neon w-full">
+          {{ mode() === 'login' ? 'Entrar' : 'Crear cuenta' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
