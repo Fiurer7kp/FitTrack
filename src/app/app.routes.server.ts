@@ -1,8 +1,5 @@
-import { Routes } from '@angular/router';
+import { RenderMode, ServerRoute } from '@angular/ssr';
 
-export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', loadComponent: () => import('./login/login').then(m => m.Login) },
-  { path: 'dashboard', loadComponent: () => import('./dashboard/dashboard').then(m => m.Dashboard) },
-  { path: '**', redirectTo: 'login' },
+export const serverRoutes: ServerRoute[] = [
+  { path: '**', renderMode: RenderMode.Client },
 ];
