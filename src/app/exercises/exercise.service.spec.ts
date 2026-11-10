@@ -17,6 +17,7 @@ describe('ExerciseService', () => {
   const currentUser = signal({ name: 'Ana', email: 'ana@example.com' });
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     window.localStorage.clear();
     currentUser.set({ name: 'Ana', email: 'ana@example.com' });
     TestBed.configureTestingModule({
@@ -72,5 +73,24 @@ describe('ExerciseService', () => {
     expect(service.add(sampleExercise)).toEqual({ success: false, reason: 'storage-unavailable' });
     expect(service.exercises()).toEqual([]);
     expect(service.storageUnavailable()).toBe(true);
+  });
+
+  it('finds routines that use an exercise before deletion', async () => {
+    const service = TestBed.inject(ExerciseService);
+    await TestBed.tick();
+    service.add(sampleExercise);
+    const exerciseId = service.exercises()[0].id;
+    window.localStorage.setItem(
+      'fittrack.routines.ana@example.com',
+      JSON.stringify([
+        { id: 'routine-1', name: 'Empuje', dayOfWeek: 'Lunes', exerciseIds: [exerciseId] },
+        { id: 'routine-2', name: 'Pierna', dayOfWeek: 'Martes', exerciseIds: [] },
+      ]),
+    );
+
+    expect(service.getRoutineNamesUsing(exerciseId)).toEqual({
+      success: true,
+      routineNames: ['Empuje'],
+    });
   });
 });

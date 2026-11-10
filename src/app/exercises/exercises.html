@@ -1,1 +1,240 @@
-<p>exercises works!</p>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <header class="mb-10 flex items-center justify-between gap-4">
+      <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
+        Fit<span class="text-brand-neon">Track</span>
+      </a>
+      <a routerLink="/dashboard" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+        Dashboard
+      </a>
+    </header>
+
+    <section aria-labelledby="exercises-title">
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 id="exercises-title" class="font-heading text-3xl font-bold">Ejercicios</h1>
+          <p class="mt-2 text-neutral-400" aria-live="polite">
+            {{ exerciseCount }} {{ exerciseCount === 1 ? 'ejercicio guardado' : 'ejercicios guardados' }}
+          </p>
+        </div>
+        <button type="button" class="btn-neon" (click)="openCreate()">+ Nuevo ejercicio</button>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="mb-4 rounded-xl border border-brand-danger/40 bg-brand-danger/10 p-4 text-sm text-red-300" role="alert">
+          {{ errorMessage() }}
+        </p>
+      }
+
+      @if (storageUnavailable()) {
+        <p class="mb-4 rounded-xl border border-brand-danger/40 bg-brand-danger/10 p-4 text-sm text-red-300" role="alert">
+          No se pudo leer o guardar tu lista de ejercicios en este dispositivo.
+        </p>
+      }
+
+      @if (exerciseCount > 0) {
+        <div class="mb-5 space-y-4">
+          <label class="sr-only" for="exercise-search">Buscar ejercicio</label>
+          <input
+            id="exercise-search"
+            type="search"
+            class="input"
+            placeholder="Buscar ejercicio"
+            [value]="query()"
+            (input)="setQuery($event)"
+          >
+          <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar por grupo muscular">
+            @for (group of filterGroups; track group) {
+              <button
+                type="button"
+                class="rounded-full border px-4 py-2 text-sm transition"
+                [class]="selectedGroup() === group ? 'border-brand-neon bg-brand-neon/10 text-brand-neon' : 'border-brand-border text-neutral-300 hover:border-neutral-500'"
+                [attr.aria-pressed]="selectedGroup() === group"
+                (click)="setGroup(group)"
+              >
+                {{ group }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (exerciseCount === 0) {
+        <div class="rounded-2xl border border-brand-border bg-brand-card px-6 py-12 text-center">
+          <h2 class="font-heading text-xl font-semibold">Tu lista está vacía</h2>
+          <p class="mx-auto mt-2 max-w-md text-neutral-400">
+            Agrega tu primer ejercicio para empezar a organizar tus entrenamientos.
+          </p>
+          <button type="button" class="btn-neon mt-6" (click)="openCreate()">Nuevo ejercicio</button>
+        </div>
+      } @else if (filteredExercises().length === 0) {
+        <p class="rounded-xl border border-brand-border bg-brand-card p-6 text-center text-neutral-300">
+          No encontramos ejercicios con esos filtros. Prueba otra búsqueda o selecciona “Todos”.
+        </p>
+      } @else {
+        <div class="grid gap-3 md:hidden">
+          @for (exercise of filteredExercises(); track exercise.id) {
+            <article class="rounded-xl border border-brand-border bg-brand-card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h2 class="font-semibold text-white">{{ exercise.name }}</h2>
+                  <span class="mt-2 inline-flex rounded-full bg-brand-neon/10 px-3 py-1 text-xs font-medium text-brand-neon">
+                    {{ exercise.muscleGroup }}
+                  </span>
+                </div>
+                <div class="flex gap-3 text-sm">
+                  <button type="button" class="text-neutral-300 underline underline-offset-4 hover:text-white" (click)="openEdit(exercise)">
+                    Editar
+                  </button>
+                  <button type="button" class="text-red-400 underline underline-offset-4 hover:text-red-300" (click)="delete(exercise)">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+              <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt class="text-neutral-400">Series × reps</dt>
+                  <dd class="mt-1 text-white">{{ exercise.sets }} × {{ exercise.reps }}</dd>
+                </div>
+                <div>
+                  <dt class="text-neutral-400">Peso</dt>
+                  <dd class="mt-1 text-white">{{ exercise.weightKg === null ? 'Peso corporal' : exercise.weightKg + ' kg' }}</dd>
+                </div>
+              </dl>
+              @if (exercise.notes) {
+                <p class="mt-3 border-t border-brand-border pt-3 text-sm text-neutral-400">{{ exercise.notes }}</p>
+              }
+            </article>
+          }
+        </div>
+
+        <div class="hidden overflow-x-auto rounded-2xl border border-brand-border md:block">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead class="bg-brand-card text-neutral-300">
+              <tr>
+                <th scope="col" class="px-4 py-3 font-medium">Ejercicio</th>
+                <th scope="col" class="px-4 py-3 font-medium">Grupo</th>
+                <th scope="col" class="px-4 py-3 font-medium">Series × reps</th>
+                <th scope="col" class="px-4 py-3 font-medium">Peso</th>
+                <th scope="col" class="px-4 py-3 font-medium">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-border">
+              @for (exercise of filteredExercises(); track exercise.id) {
+                <tr class="bg-brand-black/40">
+                  <th scope="row" class="px-4 py-4 font-medium text-white">{{ exercise.name }}</th>
+                  <td class="px-4 py-4">
+                    <span class="rounded-full bg-brand-neon/10 px-3 py-1 text-xs text-brand-neon">{{ exercise.muscleGroup }}</span>
+                  </td>
+                  <td class="px-4 py-4 text-neutral-200">{{ exercise.sets }} × {{ exercise.reps }}</td>
+                  <td class="px-4 py-4 text-neutral-200">{{ exercise.weightKg === null ? 'Peso corporal' : exercise.weightKg + ' kg' }}</td>
+                  <td class="px-4 py-4">
+                    <div class="flex gap-4">
+                      <button type="button" class="text-neutral-300 underline underline-offset-4 hover:text-white" (click)="openEdit(exercise)">Editar</button>
+                      <button type="button" class="text-red-400 underline underline-offset-4 hover:text-red-300" (click)="delete(exercise)">Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (editorOpen()) {
+    <div
+      class="fixed inset-0 z-40 bg-black/70"
+      role="presentation"
+      (click)="closeEditor()"
+      (keydown.escape)="closeEditor()"
+    >
+      <aside
+        class="ml-auto flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-brand-border bg-brand-card p-6 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exercise-editor-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 id="exercise-editor-title" class="font-heading text-2xl font-semibold">
+              {{ editingExercise() ? 'Editar ejercicio' : 'Nuevo ejercicio' }}
+            </h2>
+            <p class="mt-1 text-sm text-neutral-400">Completa los datos de tu ejercicio.</p>
+          </div>
+          <button type="button" class="rounded-lg p-2 text-neutral-400 hover:bg-brand-border hover:text-white" aria-label="Cerrar panel" (click)="closeEditor()">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+
+        <form class="flex flex-1 flex-col" [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <div class="space-y-5">
+            @if (errorMessage()) {
+              <p class="rounded-lg bg-brand-danger/10 p-3 text-sm text-red-300" role="alert">{{ errorMessage() }}</p>
+            }
+
+            <div>
+              <label for="exercise-name" class="mb-1.5 block text-sm text-neutral-300">Nombre</label>
+              <input id="exercise-name" type="text" class="input" formControlName="name" placeholder="Press de banca">
+              @if (hasError('name')) {
+                <p class="mt-1.5 text-xs text-red-400" role="alert">Escribe el nombre del ejercicio.</p>
+              }
+            </div>
+
+            <div>
+              <label for="exercise-group" class="mb-1.5 block text-sm text-neutral-300">Grupo muscular</label>
+              <select id="exercise-group" class="input" formControlName="muscleGroup">
+                <option value="" disabled>Selecciona un grupo</option>
+                @for (group of groups; track group) {
+                  <option [value]="group">{{ group }}</option>
+                }
+              </select>
+              @if (hasError('muscleGroup')) {
+                <p class="mt-1.5 text-xs text-red-400" role="alert">Selecciona un grupo muscular.</p>
+              }
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="exercise-sets" class="mb-1.5 block text-sm text-neutral-300">Series</label>
+                <input id="exercise-sets" type="number" min="1" step="1" class="input" formControlName="sets">
+                @if (hasError('sets')) {
+                  <p class="mt-1.5 text-xs text-red-400" role="alert">Usa un entero mayor que 0.</p>
+                }
+              </div>
+              <div>
+                <label for="exercise-reps" class="mb-1.5 block text-sm text-neutral-300">Repeticiones</label>
+                <input id="exercise-reps" type="number" min="1" step="1" class="input" formControlName="reps">
+                @if (hasError('reps')) {
+                  <p class="mt-1.5 text-xs text-red-400" role="alert">Usa un entero mayor que 0.</p>
+                }
+              </div>
+            </div>
+
+            <div>
+              <label for="exercise-weight" class="mb-1.5 block text-sm text-neutral-300">Peso (kg, opcional)</label>
+              <input id="exercise-weight" type="number" min="0" step="0.5" class="input" formControlName="weightKg" placeholder="Deja vacío si es peso corporal">
+              @if (hasError('weightKg')) {
+                <p class="mt-1.5 text-xs text-red-400" role="alert">Ingresa un peso válido mayor o igual a 0.</p>
+              }
+            </div>
+
+            <div>
+              <label for="exercise-notes" class="mb-1.5 block text-sm text-neutral-300">Notas (opcional)</label>
+              <textarea id="exercise-notes" rows="3" class="input resize-y" formControlName="notes" placeholder="Consejos o detalles"></textarea>
+            </div>
+          </div>
+
+          <div class="mt-auto flex justify-end gap-3 border-t border-brand-border pt-6">
+            <button type="button" class="rounded-xl border border-brand-border px-4 py-2.5 text-sm text-neutral-300 hover:text-white" (click)="closeEditor()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn-neon">{{ editingExercise() ? 'Guardar cambios' : 'Guardar ejercicio' }}</button>
+          </div>
+        </form>
+      </aside>
+    </div>
+  }
+</main>
