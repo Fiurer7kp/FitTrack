@@ -1,11 +1,73 @@
-<main class="min-h-screen p-6">
-  <header class="mx-auto flex max-w-5xl items-center justify-between">
-    <div>
-      <h1 class="font-heading text-2xl font-bold">Fit<span class="text-brand-neon">Track</span></h1>
-      <p class="mt-1 text-sm text-neutral-400">Tu progreso, tu mejor versión.</p>
-    </div>
-    <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm" (click)="logout()">
-      Cerrar sesión
-    </button>
-  </header>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <header class="mb-10 flex items-center justify-between gap-4">
+      <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
+        Fit<span class="text-brand-neon">Track</span>
+      </a>
+      <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white" (click)="logout()">
+        Cerrar sesión
+      </button>
+    </header>
+
+    <section aria-labelledby="welcome-title">
+      <div class="mb-6">
+        <h1 id="welcome-title" class="font-heading text-3xl font-bold">Hola, {{ userName }}</h1>
+        <p class="mt-2 text-neutral-400">Este es tu resumen de entrenamiento de esta semana.</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <app-metric-card
+          title="Entrenamientos esta semana"
+          [value]="metrics.workoutCount + ' / ' + weeklyGoal"
+          [supportingText]="metrics.workoutCount + ' de ' + weeklyGoal + ' entrenamientos completados'"
+          [progress]="metrics.goalProgress"
+          progressLabel="Avance de la meta semanal de entrenamientos"
+        />
+        <app-metric-card
+          title="Calorías quemadas"
+          [value]="metrics.caloriesBurned.toLocaleString('es') + ' kcal'"
+          supportingText="Durante esta semana"
+        />
+        <app-metric-card
+          title="Racha de días"
+          [value]="metrics.streakDays + (metrics.streakDays === 1 ? ' día' : ' días')"
+          supportingText="Días consecutivos entrenando"
+        />
+      </div>
+    </section>
+
+    <section class="mt-10" aria-labelledby="recent-workouts-title">
+      <div class="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="recent-workouts-title" class="font-heading text-xl font-semibold">Últimos entrenamientos</h2>
+          <p class="mt-1 text-sm text-neutral-400">Tus 5 sesiones más recientes.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3">
+        @for (workout of recentWorkouts; track workout.id) {
+          <article class="rounded-xl border border-brand-border bg-brand-card p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-white">{{ workout.name }}</h3>
+              <p class="mt-1 text-sm text-neutral-400">{{ formatDate(workout.date) }}</p>
+            </div>
+            <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:mt-0 sm:min-w-64">
+              <div>
+                <dt class="text-neutral-400">Duración</dt>
+                <dd class="mt-1 font-medium text-white">{{ workout.durationMinutes }} min</dd>
+              </div>
+              <div>
+                <dt class="text-neutral-400">Volumen total</dt>
+                <dd class="mt-1 font-medium text-white">{{ getWorkoutVolumeKg(workout).toLocaleString('es') }} kg</dd>
+              </div>
+            </dl>
+          </article>
+        } @empty {
+          <p class="rounded-xl border border-brand-border bg-brand-card p-6 text-neutral-300">
+            Aún no tienes entrenamientos. Registra tu primera sesión para ver tu progreso aquí.
+          </p>
+        }
+      </div>
+    </section>
+  </div>
 </main>
