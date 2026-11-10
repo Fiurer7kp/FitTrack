@@ -41,6 +41,7 @@ describe('Dashboard', () => {
     expect(element.querySelectorAll('section[aria-labelledby="recent-workouts-title"] article')).toHaveLength(5);
     expect(element.textContent).toContain('Duración');
     expect(element.textContent).toContain('Volumen total');
+    expect(element.querySelector('a[href="/exercises"]')?.textContent).toContain('Ejercicios');
   });
 
   it('changes the progress chart range and announces it accessibly', async () => {
