@@ -21,6 +21,15 @@ export interface WeeklyMetrics {
   goalProgress: number;
 }
 
+export interface ProgressPoint {
+  id: string;
+  name: string;
+  date: Date;
+  weightKg: number;
+  x: number;
+  y: number;
+}
+
 const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
   {
     id: 'upper-a',
@@ -86,14 +95,50 @@ const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
 ];
 
 export function createMockWorkouts(referenceDate: Date = new Date()): Workout[] {
-  const dayOffsets = [0, -1, -2, -4, -7, -9];
+  const dayOffsets = [0, -1, -2, -4, -7, -9, -14, -20, -27, -35, -44, -55, -67, -80, -89];
 
-  return mockWorkoutTemplates.map((workout, index) => {
+  return dayOffsets.map((dayOffset, index) => {
+    const workout = mockWorkoutTemplates[index % mockWorkoutTemplates.length];
     const date = new Date(referenceDate);
-    date.setDate(date.getDate() + dayOffsets[index]);
+    date.setDate(date.getDate() + dayOffset);
     date.setHours(12, 0, 0, 0);
-    return { ...workout, date };
+    return { ...workout, id: `${workout.id}-${index}`, date };
   });
+}
+
+export function getProgressPoints(
+  workouts: Workout[],
+  rangeDays: 30 | 90,
+  referenceDate: Date = new Date(),
+): ProgressPoint[] {
+  const today = localDayNumber(referenceDate);
+  const entries = workouts
+    .map((workout) => ({
+      workout,
+      daysAgo: today - localDayNumber(workout.date),
+      weightKg: Math.max(0, ...workout.exercises.map(({ weightKg }) => weightKg)),
+    }))
+    .filter(({ daysAgo, weightKg }) => daysAgo >= 0 && daysAgo < rangeDays && weightKg > 0)
+    .sort((first, second) => first.workout.date.getTime() - second.workout.date.getTime());
+
+  if (entries.length === 0) {
+    return [];
+  }
+
+  const maxWeight = Math.ceil(Math.max(...entries.map(({ weightKg }) => weightKg)) / 10) * 10;
+  const chartLeft = 46;
+  const chartTop = 18;
+  const chartWidth = 538;
+  const chartHeight = 192;
+
+  return entries.map(({ workout, daysAgo, weightKg }) => ({
+    id: workout.id,
+    name: workout.name,
+    date: workout.date,
+    weightKg,
+    x: chartLeft + ((rangeDays - 1 - daysAgo) / (rangeDays - 1)) * chartWidth,
+    y: chartTop + chartHeight * (1 - weightKg / maxWeight),
+  }));
 }
 
 export function getWorkoutVolumeKg(workout: Workout): number {
@@ -148,4 +193,8 @@ export function calculateWeeklyMetrics(
 
 function localDateKey(date: Date): string {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function localDayNumber(date: Date): number {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
 }
