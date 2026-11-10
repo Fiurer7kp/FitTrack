@@ -6,8 +6,12 @@ import { Exercise, ExerciseInput } from './exercise';
 type ExerciseResult =
   | { success: true }
   | { success: false; reason: 'storage-unavailable' | 'not-found' };
+type RoutineReferenceResult =
+  | { success: true; routineNames: string[] }
+  | { success: false; reason: 'storage-unavailable' };
 
 const STORAGE_PREFIX = 'fittrack.exercises.';
+const ROUTINE_STORAGE_PREFIX = 'fittrack.routines.';
 
 @Injectable({ providedIn: 'root' })
 export class ExerciseService {
@@ -70,6 +74,39 @@ export class ExerciseService {
     return this.save(userEmail, this.state().filter((exercise) => exercise.id !== id));
   }
 
+  getRoutineNamesUsing(exerciseId: string): RoutineReferenceResult {
+    const userEmail = this.auth.currentUser()?.email;
+    if (!isPlatformBrowser(this.platformId) || !userEmail || this.storageUnavailable()) {
+      return { success: false, reason: 'storage-unavailable' };
+    }
+
+    try {
+      const raw = window.localStorage.getItem(`${ROUTINE_STORAGE_PREFIX}${userEmail}`);
+      if (raw === null) {
+        return { success: true, routineNames: [] };
+      }
+
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed) || !parsed.every((routine) => this.isRoutine(routine))) {
+        this.storageUnavailable.set(true);
+        return { success: false, reason: 'storage-unavailable' };
+      }
+
+      return {
+        success: true,
+        routineNames: parsed
+          .filter(({ exerciseIds }) => exerciseIds.includes(exerciseId))
+          .map(({ name }) => name),
+      };
+    } catch (error) {
+      if (error instanceof DOMException || error instanceof SyntaxError) {
+        this.storageUnavailable.set(true);
+        return { success: false, reason: 'storage-unavailable' };
+      }
+      throw error;
+    }
+  }
+
   private save(userEmail: string, exercises: Exercise[]): ExerciseResult {
     try {
       window.localStorage.setItem(this.storageKey(userEmail), JSON.stringify(exercises));
@@ -130,6 +167,23 @@ export class ExerciseService {
       typeof item['reps'] === 'number' &&
       (typeof item['weightKg'] === 'number' || item['weightKg'] === null) &&
       typeof item['notes'] === 'string'
+    );
+  }
+
+  private isRoutine(
+    value: unknown,
+  ): value is { id: string; name: string; dayOfWeek: string; exerciseIds: string[] } {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+
+    const routine = value as Record<string, unknown>;
+    return (
+      typeof routine['id'] === 'string' &&
+      typeof routine['name'] === 'string' &&
+      typeof routine['dayOfWeek'] === 'string' &&
+      Array.isArray(routine['exerciseIds']) &&
+      routine['exerciseIds'].every((id: unknown) => typeof id === 'string')
     );
   }
 }
