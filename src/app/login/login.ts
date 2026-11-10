@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -11,37 +12,59 @@ import { Router } from '@angular/router';
 export class Login {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
-  // 'login' o 'register': controla la pestaña activa
   mode = signal<'login' | 'register'>('login');
+  errorMessage = signal<string | null>(this.auth.sessionNotice());
 
   form = this.fb.nonNullable.group({
-    name: [''],
+    name: ['', [Validators.pattern(/\S/)]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   setMode(mode: 'login' | 'register') {
     this.mode.set(mode);
-    // El nombre solo es obligatorio al registrarse
+    this.errorMessage.set(null);
+    this.auth.clearSessionNotice();
     const name = this.form.controls.name;
-    name.setValidators(mode === 'register' ? [Validators.required] : []);
+    name.setValidators(
+      mode === 'register' ? [Validators.required, Validators.pattern(/\S/)] : [Validators.pattern(/\S/)],
+    );
     name.updateValueAndValidity();
     this.form.markAsUntouched();
   }
 
-  // true si el campo es inválido y el usuario ya lo tocó
   showError(field: 'name' | 'email' | 'password') {
     const c = this.form.controls[field];
     return c.invalid && c.touched;
   }
 
-  submit() {
+  async submit() {
+    this.errorMessage.set(null);
     if (this.form.invalid) {
-      this.form.markAllAsTouched(); // muestra todos los errores a la vez
+      this.form.markAllAsTouched();
       return;
     }
-    // Login simulado: todavía no hay backend
-    this.router.navigate(['/dashboard']);
+
+    const { name, email, password } = this.form.getRawValue();
+    const isRegistering = this.mode() === 'register';
+    const result = isRegistering
+      ? await this.auth.register(name, email, password)
+      : await this.auth.login(email, password);
+    if (!result.success) {
+      if (result.reason === 'email-in-use') {
+        this.errorMessage.set('Ya existe una cuenta con ese correo.');
+      } else if (result.reason === 'invalid-credentials') {
+        this.errorMessage.set('El correo o la contraseña no son correctos.');
+      } else if (result.reason === 'crypto-unavailable') {
+        this.errorMessage.set('No se pudo verificar la contraseña. Inténtalo de nuevo.');
+      } else {
+        this.errorMessage.set('No se pudo acceder al almacenamiento de este dispositivo.');
+      }
+      return;
+    }
+
+    await this.router.navigate(['/dashboard']);
   }
 }
