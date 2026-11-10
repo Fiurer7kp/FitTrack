@@ -1,5 +1,6 @@
 import {
   calculateWeeklyMetrics,
+  getProgressPoints,
   getRecentWorkouts,
   getWorkoutVolumeKg,
   Workout,
@@ -67,5 +68,24 @@ describe('dashboard workout calculations', () => {
       'fifth',
     ]);
     expect(getWorkoutVolumeKg(workouts[0])).toBe(1200);
+  });
+
+  it('filters progress data by the selected range and plots lifted weight by date', () => {
+    const workouts = [
+      workout('within-range', '2026-10-25'),
+      workout('outside-range', '2026-10-01'),
+      workout('future', '2026-11-12'),
+    ];
+
+    const points = getProgressPoints(workouts, 30, new Date('2026-11-10T18:00:00'));
+
+    expect(points.map(({ id }) => id)).toEqual(['within-range']);
+    expect(points[0].weightKg).toBe(50);
+    expect(points[0].x).toBeGreaterThan(46);
+    expect(points[0].x).toBeLessThan(584);
+  });
+
+  it('returns an empty series when the selected range contains no weighted workouts', () => {
+    expect(getProgressPoints([], 90, new Date('2026-11-10T18:00:00'))).toEqual([]);
   });
 });
