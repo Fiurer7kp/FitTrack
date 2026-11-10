@@ -43,6 +43,17 @@ describe('Dashboard', () => {
     expect(element.textContent).toContain('Volumen total');
   });
 
+  it('changes the progress chart range and announces it accessibly', async () => {
+    const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+    const rangeButton = Array.from(buttons).find((button) => button.textContent?.includes('90 días'));
+    rangeButton?.click();
+    await fixture.whenStable();
+
+    expect(component.progressRange()).toBe(90);
+    expect(fixture.nativeElement.querySelector('svg')?.getAttribute('aria-label')).toContain('90 días');
+    expect(rangeButton?.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('logs the user out and replaces the dashboard history entry', async () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
