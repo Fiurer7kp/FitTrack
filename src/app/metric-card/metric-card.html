@@ -1,1 +1,24 @@
-<p>metric-card works!</p>
+<article class="rounded-2xl border border-brand-border bg-brand-card p-5">
+  <h2 class="text-sm font-medium text-neutral-300">{{ title() }}</h2>
+  <p class="mt-3 font-heading text-3xl font-bold text-white">{{ value() }}</p>
+  <p class="mt-2 text-sm text-neutral-400">{{ supportingText() }}</p>
+
+  @if (progress() !== null) {
+    <div class="mt-4">
+      <div
+        class="h-2 overflow-hidden rounded-full bg-brand-border"
+        role="progressbar"
+        [attr.aria-label]="progressLabel() ?? title()"
+        [attr.aria-valuenow]="progress()"
+        aria-valuemin="0"
+        [attr.aria-valuemax]="100"
+      >
+        <div
+          class="h-full rounded-full bg-brand-neon transition-[width]"
+          [style.width.%]="progress()"
+        ></div>
+      </div>
+      <p class="mt-2 text-xs text-neutral-400">{{ progress() }}% de la meta</p>
+    </div>
+  }
+</article>

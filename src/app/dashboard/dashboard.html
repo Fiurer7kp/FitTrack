@@ -1,11 +1,151 @@
-<main class="min-h-screen p-6">
-  <header class="mx-auto flex max-w-5xl items-center justify-between">
-    <div>
-      <h1 class="font-heading text-2xl font-bold">Fit<span class="text-brand-neon">Track</span></h1>
-      <p class="mt-1 text-sm text-neutral-400">Tu progreso, tu mejor versión.</p>
-    </div>
-    <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm" (click)="logout()">
-      Cerrar sesión
-    </button>
-  </header>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <header class="mb-10 flex items-center justify-between gap-4">
+      <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
+        Fit<span class="text-brand-neon">Track</span>
+      </a>
+      <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white" (click)="logout()">
+        Cerrar sesión
+      </button>
+    </header>
+
+    <section aria-labelledby="welcome-title">
+      <div class="mb-6">
+        <h1 id="welcome-title" class="font-heading text-3xl font-bold">Hola, {{ userName }}</h1>
+        <p class="mt-2 text-neutral-400">Este es tu resumen de entrenamiento de esta semana.</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <app-metric-card
+          title="Entrenamientos esta semana"
+          [value]="metrics.workoutCount + ' / ' + weeklyGoal"
+          [supportingText]="metrics.workoutCount + ' de ' + weeklyGoal + ' entrenamientos completados'"
+          [progress]="metrics.goalProgress"
+          progressLabel="Avance de la meta semanal de entrenamientos"
+        />
+        <app-metric-card
+          title="Calorías quemadas"
+          [value]="metrics.caloriesBurned.toLocaleString('es') + ' kcal'"
+          supportingText="Durante esta semana"
+        />
+        <app-metric-card
+          title="Racha de días"
+          [value]="metrics.streakDays + (metrics.streakDays === 1 ? ' día' : ' días')"
+          supportingText="Días consecutivos entrenando"
+        />
+      </div>
+    </section>
+
+    <section class="mt-10 rounded-2xl border border-brand-border bg-brand-card p-5 sm:p-6" aria-labelledby="progress-title">
+      <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 id="progress-title" class="font-heading text-xl font-semibold">Progreso del peso levantado</h2>
+          <p class="mt-1 text-sm text-neutral-400">Peso máximo registrado por entrenamiento.</p>
+        </div>
+        <div class="flex rounded-lg border border-brand-border p-1" aria-label="Rango de la gráfica">
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-sm transition"
+            [class]="progressRange() === 30 ? 'bg-brand-neon font-semibold text-brand-black' : 'text-neutral-300 hover:text-white'"
+            [attr.aria-pressed]="progressRange() === 30"
+            (click)="setProgressRange(30)"
+          >
+            30 días
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-sm transition"
+            [class]="progressRange() === 90 ? 'bg-brand-neon font-semibold text-brand-black' : 'text-neutral-300 hover:text-white'"
+            [attr.aria-pressed]="progressRange() === 90"
+            (click)="setProgressRange(90)"
+          >
+            90 días
+          </button>
+        </div>
+      </div>
+
+      @if (progressPoints().length > 0) {
+        <div class="overflow-x-auto">
+          <svg
+            class="h-64 min-w-[34rem] w-full"
+            viewBox="0 0 600 240"
+            role="img"
+            [attr.aria-label]="'Gráfica de peso levantado durante los últimos ' + progressRange() + ' días'"
+          >
+            <title>Progreso del peso levantado</title>
+            @for (tick of chartTicks(); track tick) {
+              <line
+                x1="46"
+                x2="584"
+                [attr.y1]="210 - (tick / chartMaxWeight()) * 192"
+                [attr.y2]="210 - (tick / chartMaxWeight()) * 192"
+                stroke="#2D2D2D"
+                stroke-width="1"
+              />
+              <text
+                x="38"
+                [attr.y]="214 - (tick / chartMaxWeight()) * 192"
+                fill="#A3A3A3"
+                font-size="12"
+                text-anchor="end"
+              >{{ tick }} kg</text>
+            }
+            <polyline
+              [attr.points]="chartPolyline()"
+              fill="none"
+              stroke="#39FF14"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            @for (point of progressPoints(); track point.id) {
+              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="#39FF14">
+                <title>{{ point.name }} · {{ formatDate(point.date) }} · {{ point.weightKg }} kg</title>
+              </circle>
+            }
+            <text x="46" y="234" fill="#A3A3A3" font-size="12">Hace {{ progressRange() }} días</text>
+            <text x="584" y="234" fill="#A3A3A3" font-size="12" text-anchor="end">Hoy</text>
+          </svg>
+        </div>
+      } @else {
+        <p class="rounded-xl border border-brand-border p-6 text-center text-neutral-300">
+          Aún no hay datos de peso para este periodo. Registra un entrenamiento con peso para ver tu progreso.
+        </p>
+      }
+    </section>
+
+    <section class="mt-10" aria-labelledby="recent-workouts-title">
+      <div class="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="recent-workouts-title" class="font-heading text-xl font-semibold">Últimos entrenamientos</h2>
+          <p class="mt-1 text-sm text-neutral-400">Tus 5 sesiones más recientes.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3">
+        @for (workout of recentWorkouts; track workout.id) {
+          <article class="rounded-xl border border-brand-border bg-brand-card p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-white">{{ workout.name }}</h3>
+              <p class="mt-1 text-sm text-neutral-400">{{ formatDate(workout.date) }}</p>
+            </div>
+            <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:mt-0 sm:min-w-64">
+              <div>
+                <dt class="text-neutral-400">Duración</dt>
+                <dd class="mt-1 font-medium text-white">{{ workout.durationMinutes }} min</dd>
+              </div>
+              <div>
+                <dt class="text-neutral-400">Volumen total</dt>
+                <dd class="mt-1 font-medium text-white">{{ getWorkoutVolumeKg(workout).toLocaleString('es') }} kg</dd>
+              </div>
+            </dl>
+          </article>
+        } @empty {
+          <p class="rounded-xl border border-brand-border bg-brand-card p-6 text-neutral-300">
+            Aún no tienes entrenamientos. Registra tu primera sesión para ver tu progreso aquí.
+          </p>
+        }
+      </div>
+    </section>
+  </div>
 </main>
