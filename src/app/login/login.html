@@ -33,6 +33,9 @@
       </div>
 
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+        @if (errorMessage()) {
+          <p class="text-sm text-brand-danger" role="alert">{{ errorMessage() }}</p>
+        }
 
         @if (mode() === 'register') {
           <div>
