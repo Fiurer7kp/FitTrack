@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { ExerciseService } from './exercise.service';
 import { Exercises } from './exercises';
@@ -14,6 +15,7 @@ describe('Exercises', () => {
     await TestBed.configureTestingModule({
       imports: [Exercises],
       providers: [
+        provideRouter([]),
         { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: AuthService, useValue: { currentUser } },
       ],
@@ -48,6 +50,20 @@ describe('Exercises', () => {
 
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Nuevo ejercicio');
+  });
+
+  it('connects the navigation links to their routes', async () => {
+    const { fixture } = await createComponent();
+    const links = fixture.nativeElement.querySelectorAll('header a') as NodeListOf<HTMLAnchorElement>;
+
+    expect(Array.from(links, (link) => link.getAttribute('href'))).toEqual([
+      '/dashboard',
+      '/dashboard',
+      '/calendar',
+      '/routines',
+      '/timer',
+      '/profile',
+    ]);
   });
 
   it('requires a non-empty name and positive integer sets and reps', async () => {
