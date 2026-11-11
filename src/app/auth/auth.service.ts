@@ -4,6 +4,9 @@ import { isPlatformBrowser } from '@angular/common';
 export interface AuthUser {
   name: string;
   email: string;
+  weightKg?: number | null;
+  heightCm?: number | null;
+  goal?: string;
 }
 
 interface StoredAccount extends AuthUser {
@@ -22,6 +25,9 @@ export type RegistrationResult =
 export type LoginResult =
   | { success: true }
   | { success: false; reason: 'invalid-credentials' | 'storage-unavailable' | 'crypto-unavailable' };
+export type ProfileUpdateResult =
+  | { success: true }
+  | { success: false; reason: 'unauthenticated' | 'storage-unavailable' };
 
 const STORAGE_KEY = 'fittrack.auth';
 
@@ -35,7 +41,15 @@ export class AuthService {
   readonly currentUser = computed(() => {
     const state = this.state();
     const account = state.accounts.find(({ email }) => email === state.activeEmail);
-    return account ? { name: account.name, email: account.email } : null;
+    return account
+      ? {
+          name: account.name,
+          email: account.email,
+          ...(account.weightKg !== undefined ? { weightKg: account.weightKg } : {}),
+          ...(account.heightCm !== undefined ? { heightCm: account.heightCm } : {}),
+          ...(account.goal !== undefined ? { goal: account.goal } : {}),
+        }
+      : null;
   });
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
 
@@ -165,6 +179,60 @@ export class AuthService {
     }
   }
 
+  updateProfile(profile: Pick<AuthUser, 'name' | 'weightKg' | 'heightCm' | 'goal'>): ProfileUpdateResult {
+    if (!isPlatformBrowser(this.platformId) || this.storageUnavailable()) {
+      return { success: false, reason: 'storage-unavailable' };
+    }
+
+    const currentEmail = this.state().activeEmail;
+    if (!currentEmail) {
+      return { success: false, reason: 'unauthenticated' };
+    }
+
+    let currentState: AuthState;
+    try {
+      currentState = this.readState();
+    } catch (error) {
+      if (!(error instanceof AuthStorageError)) {
+        throw error;
+      }
+      this.storageUnavailable.set(true);
+      return { success: false, reason: 'storage-unavailable' };
+    }
+
+    if (!currentState.accounts.some(({ email }) => email === currentEmail)) {
+      return { success: false, reason: 'unauthenticated' };
+    }
+
+    const nextState: AuthState = {
+      ...currentState,
+      accounts: currentState.accounts.map((account) =>
+        account.email === currentEmail
+          ? {
+              ...account,
+              name: profile.name.trim(),
+              weightKg: profile.weightKg,
+              heightCm: profile.heightCm,
+              goal: profile.goal,
+            }
+          : account,
+      ),
+    };
+
+    try {
+      this.persist(nextState);
+    } catch (error) {
+      if (!(error instanceof AuthStorageError)) {
+        throw error;
+      }
+      this.storageUnavailable.set(true);
+      return { success: false, reason: 'storage-unavailable' };
+    }
+
+    this.state.set(nextState);
+    return { success: true };
+  }
+
   clearSessionNotice(): void {
     this.sessionNotice.set(null);
   }
@@ -260,7 +328,12 @@ export class AuthService {
       typeof record['name'] === 'string' &&
       typeof record['email'] === 'string' &&
       typeof record['salt'] === 'string' &&
-      typeof record['passwordHash'] === 'string'
+      typeof record['passwordHash'] === 'string' &&
+      (record['weightKg'] === undefined || record['weightKg'] === null ||
+        (typeof record['weightKg'] === 'number' && record['weightKg'] > 0)) &&
+      (record['heightCm'] === undefined || record['heightCm'] === null ||
+        (typeof record['heightCm'] === 'number' && record['heightCm'] > 0)) &&
+      (record['goal'] === undefined || typeof record['goal'] === 'string')
     );
   }
 

@@ -1,8 +1,68 @@
+:root {
+  --color-brand-black: #0f0f0f;
+  --color-brand-neon: #39ff14;
+  --color-brand-card: #1a1a1a;
+  --color-brand-border: #2d2d2d;
+  --color-brand-danger: #ff3b30;
+  color-scheme: dark;
+}
+
+html.light {
+  --color-brand-black: #f3f5f2;
+  --color-brand-neon: #278a16;
+  --color-brand-card: #ffffff;
+  --color-brand-border: #d7ded5;
+  --color-brand-danger: #c62828;
+  color-scheme: light;
+}
+
 body {
   margin: 0;
-  background-color: #0F0F0F;
-  color: #FFFFFF;
+  background-color: var(--color-brand-black);
+  color: #ffffff;
   font-family: "Inter", sans-serif;
+}
+
+html.light body {
+  color: #182018;
+}
+
+html.light .text-white {
+  color: #182018;
+}
+
+html.light .text-neutral-200 {
+  color: #303a30;
+}
+
+html.light .text-neutral-300 {
+  color: #3d483d;
+}
+
+html.light .text-neutral-400 {
+  color: #5b665b;
+}
+
+html.light .text-neutral-500 {
+  color: #687368;
+}
+
+html.light .text-red-300,
+html.light .text-red-400 {
+  color: #b42318;
+}
+
+html.light .text-brand-black {
+  color: #ffffff;
+}
+
+html.light .input {
+  background-color: #ffffff;
+  color: #182018;
+}
+
+html.light .btn-neon {
+  color: #ffffff;
 }
 
 button:focus-visible,

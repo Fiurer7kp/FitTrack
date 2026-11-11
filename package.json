@@ -6,8 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "ng test --watch=false --browsers=chromium",
+    "test:watch": "ng test --browsers=chromium",
     "serve:ssr:fittrack": "node dist/fittrack/server/server.mjs"
   },
   "private": true,

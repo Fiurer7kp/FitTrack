@@ -1,6 +1,6 @@
 <main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-6xl">
-    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <header class="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Agenda</p>
         <h1 class="font-heading text-3xl font-bold text-white">Calendario de entrenamientos</h1>
@@ -10,46 +10,64 @@
       </a>
     </header>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
-      @for (card of dayCards(); track card.date.toISOString()) {
-        <article class="rounded-2xl border border-brand-border bg-brand-card p-4">
-          <div class="mb-3 border-b border-brand-border pb-3">
-            <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">{{ card.label }}</p>
-          </div>
+    <section class="rounded-2xl border border-brand-border bg-brand-card p-5 sm:p-6" aria-labelledby="month-title">
+      <div class="mb-5 flex items-center justify-between gap-4">
+        <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-200 hover:border-neutral-500" aria-label="Mes anterior" (click)="previousMonth()">←</button>
+        <h2 id="month-title" class="font-heading text-xl font-semibold capitalize text-white" aria-live="polite">{{ monthLabel() }}</h2>
+        <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-200 hover:border-neutral-500" aria-label="Mes siguiente" (click)="nextMonth()">→</button>
+      </div>
 
-          @if (card.items.length === 0) {
-            <p class="text-sm text-neutral-400">Sin sesiones</p>
-          } @else {
-            <ul class="space-y-3">
-              @for (workout of card.items; track workout.id) {
-                <li class="rounded-xl border border-brand-border bg-brand-black/40 p-3">
-                  <p class="font-semibold text-white">{{ workout.name }}</p>
-                  <p class="mt-1 text-xs text-neutral-400">{{ workout.durationMinutes }} min · {{ workout.caloriesBurned }} kcal</p>
-                </li>
+      <div class="grid grid-cols-7 gap-1 sm:gap-2">
+        @for (weekday of weekdays; track weekday) {
+          <div class="py-2 text-center text-xs font-semibold uppercase text-neutral-400 sm:text-sm">{{ weekday }}</div>
+        }
+        @for (day of days(); track $index) {
+          @if (day.date; as date) {
+            <button
+              type="button"
+              class="relative min-h-14 rounded-lg border p-2 text-left transition sm:min-h-20"
+              [class]="isSelected(date) ? 'border-brand-neon bg-brand-neon/20' : day.workouts.length ? 'border-brand-neon/70 bg-brand-neon/10 hover:bg-brand-neon/20' : day.isToday ? 'border-neutral-400 bg-brand-black/40' : 'border-brand-border bg-brand-black/20 hover:border-neutral-500'"
+              [attr.aria-label]="formatDay(date) + (day.workouts.length ? ', con entrenamiento' : ', sin entrenamiento')"
+              [attr.aria-pressed]="isSelected(date)"
+              (click)="selectDay(date)"
+            >
+              <span class="text-sm font-medium text-white">{{ date.getDate() }}</span>
+              @if (day.workouts.length) {
+                <span class="mt-1 block text-[10px] font-semibold text-brand-neon sm:text-xs">
+                  {{ day.workouts.length }} {{ day.workouts.length === 1 ? 'sesión' : 'sesiones' }}
+                </span>
               }
-            </ul>
+            </button>
+          } @else {
+            <div class="min-h-14 rounded-lg sm:min-h-20" aria-hidden="true"></div>
           }
-        </article>
-      }
-    </section>
-
-    <section class="mt-10 rounded-2xl border border-brand-border bg-brand-card p-5">
-      <h2 class="font-heading text-xl font-semibold text-white">Próximas sesiones</h2>
-      <div class="mt-5 space-y-3">
-        @for (workout of workouts; track workout.id) {
-          <article class="flex flex-col gap-2 rounded-xl border border-brand-border bg-brand-black/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="font-semibold text-white">{{ workout.name }}</p>
-              <p class="text-sm text-neutral-400">{{ formatDay(workout.date) }}</p>
-            </div>
-            <div class="text-sm text-neutral-300">
-              <span>{{ workout.durationMinutes }} min</span>
-              <span class="mx-2 text-neutral-500">•</span>
-              <span>{{ workout.exercises.length }} ejercicios</span>
-            </div>
-          </article>
         }
       </div>
+      <p class="mt-4 text-sm text-neutral-400">Los días en verde tienen entrenamientos. Selecciona un día para ver el detalle.</p>
     </section>
+
+    @if (selectedDate(); as date) {
+      <aside class="mt-6 rounded-2xl border border-brand-border bg-brand-card p-5 sm:p-6" aria-labelledby="selected-day-title">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Detalle del día</p>
+            <h2 id="selected-day-title" class="mt-1 font-heading text-xl font-semibold capitalize text-white">{{ formatDay(date) }}</h2>
+          </div>
+          <button type="button" class="rounded-lg border border-brand-border px-3 py-1.5 text-sm text-neutral-300 hover:border-neutral-500" aria-label="Cerrar detalle del día" (click)="closeDayDetails()">Cerrar</button>
+        </div>
+        @if (selectedWorkouts().length === 0) {
+          <p class="mt-4 rounded-xl border border-brand-border bg-brand-black/30 p-4 text-neutral-300">No hay entrenamientos registrados este día.</p>
+        } @else {
+          <ul class="mt-4 space-y-3">
+            @for (workout of selectedWorkouts(); track workout.id) {
+              <li class="rounded-xl border border-brand-border bg-brand-black/30 p-4">
+                <h3 class="font-semibold text-white">{{ workout.name }}</h3>
+                <p class="mt-1 text-sm text-neutral-400">{{ workout.durationMinutes }} min · {{ workout.exercises.length }} ejercicios · {{ workout.caloriesBurned }} kcal</p>
+              </li>
+            }
+          </ul>
+        }
+      </aside>
+    }
   </div>
 </main>
