@@ -1,1 +1,55 @@
-<p>calendar works!</p>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Agenda</p>
+        <h1 class="font-heading text-3xl font-bold text-white">Calendario de entrenamientos</h1>
+      </div>
+      <a href="/dashboard" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+        Volver al dashboard
+      </a>
+    </header>
+
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+      @for (card of dayCards(); track card.date.toISOString()) {
+        <article class="rounded-2xl border border-brand-border bg-brand-card p-4">
+          <div class="mb-3 border-b border-brand-border pb-3">
+            <p class="text-xs uppercase tracking-[0.2em] text-neutral-400">{{ card.label }}</p>
+          </div>
+
+          @if (card.items.length === 0) {
+            <p class="text-sm text-neutral-400">Sin sesiones</p>
+          } @else {
+            <ul class="space-y-3">
+              @for (workout of card.items; track workout.id) {
+                <li class="rounded-xl border border-brand-border bg-brand-black/40 p-3">
+                  <p class="font-semibold text-white">{{ workout.name }}</p>
+                  <p class="mt-1 text-xs text-neutral-400">{{ workout.durationMinutes }} min · {{ workout.caloriesBurned }} kcal</p>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      }
+    </section>
+
+    <section class="mt-10 rounded-2xl border border-brand-border bg-brand-card p-5">
+      <h2 class="font-heading text-xl font-semibold text-white">Próximas sesiones</h2>
+      <div class="mt-5 space-y-3">
+        @for (workout of workouts; track workout.id) {
+          <article class="flex flex-col gap-2 rounded-xl border border-brand-border bg-brand-black/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="font-semibold text-white">{{ workout.name }}</p>
+              <p class="text-sm text-neutral-400">{{ formatDay(workout.date) }}</p>
+            </div>
+            <div class="text-sm text-neutral-300">
+              <span>{{ workout.durationMinutes }} min</span>
+              <span class="mx-2 text-neutral-500">•</span>
+              <span>{{ workout.exercises.length }} ejercicios</span>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  </div>
+</main>

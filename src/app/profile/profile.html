@@ -1,1 +1,51 @@
-<p>profile works!</p>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-5xl">
+    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Cuenta</p>
+        <h1 class="font-heading text-3xl font-bold text-white">Perfil</h1>
+      </div>
+      <a href="/dashboard" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+        Volver al dashboard
+      </a>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section class="rounded-2xl border border-brand-border bg-brand-card p-6">
+        <div class="flex items-center gap-4">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-brand-neon/15 text-xl font-bold text-brand-neon">
+            {{ userName.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <h2 class="font-heading text-2xl font-bold text-white">{{ userName }}</h2>
+            <p class="text-neutral-400">{{ userEmail }}</p>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <p class="text-sm text-neutral-400">Sesiones</p>
+            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().workouts }}</p>
+          </article>
+          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <p class="text-sm text-neutral-400">Meta semanal</p>
+            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().metrics.goalProgress }}%</p>
+          </article>
+          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <p class="text-sm text-neutral-400">Racha</p>
+            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().metrics.streakDays }} días</p>
+          </article>
+        </div>
+      </section>
+
+      <aside class="rounded-2xl border border-brand-border bg-brand-card p-6">
+        <h2 class="font-heading text-xl font-semibold text-white">Objetivos</h2>
+        <ul class="mt-5 space-y-4 text-sm text-neutral-300">
+          <li class="rounded-xl bg-brand-black/40 p-3">4 entrenamientos por semana</li>
+          <li class="rounded-xl bg-brand-black/40 p-3">Mantener la progresión de fuerza</li>
+          <li class="rounded-xl bg-brand-black/40 p-3">Priorizar la recuperación y la consistencia</li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</main>

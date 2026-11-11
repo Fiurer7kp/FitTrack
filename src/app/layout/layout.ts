@@ -6,4 +6,13 @@ import { Component } from '@angular/core';
   styleUrl: './layout.scss',
   templateUrl: './layout.html',
 })
-export class Layout {}
+export class Layout {
+  readonly navItems = [
+    { label: 'Dashboard', path: '/dashboard' },
+    { label: 'Ejercicios', path: '/exercises' },
+    { label: 'Rutinas', path: '/routines' },
+    { label: 'Calendario', path: '/calendar' },
+    { label: 'Timer', path: '/timer' },
+    { label: 'Perfil', path: '/profile' },
+  ];
+}
