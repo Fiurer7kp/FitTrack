@@ -1,5 +1,15 @@
-import { Component, computed } from '@angular/core';
-import { createMockWorkouts } from '../dashboard/workout';
+import { Component, computed, signal } from '@angular/core';
+import { Workout, createMockWorkouts } from '../dashboard/workout';
+
+interface CalendarDay {
+  date: Date | null;
+  workouts: Workout[];
+  isToday: boolean;
+}
+
+function localDateKey(date: Date): string {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
 
 @Component({
   imports: [],
@@ -9,46 +19,70 @@ import { createMockWorkouts } from '../dashboard/workout';
 })
 export class Calendar {
   readonly workouts = createMockWorkouts();
-
-  readonly weekDays = computed(() => {
+  readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  readonly selectedDate = signal<Date | null>(null);
+  readonly weekdays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  readonly monthLabel = computed(() =>
+    new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(this.month()),
+  );
+  readonly days = computed(() => {
+    const month = this.month();
+    const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+    const mondayOffset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    const totalCells = Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dayOffset = (today.getDay() + 6) % 7;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - dayOffset);
 
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + index);
+    return Array.from({ length: totalCells }, (_, index): CalendarDay => {
+      const dayNumber = index - mondayOffset + 1;
+      if (dayNumber < 1 || dayNumber > daysInMonth) {
+        return { date: null, workouts: [], isToday: false };
+      }
 
+      const date = new Date(month.getFullYear(), month.getMonth(), dayNumber);
       return {
         date,
-        label: new Intl.DateTimeFormat('es', {
-          weekday: 'short',
-          day: 'numeric',
-        }).format(date),
+        workouts: this.workouts.filter(({ date: workoutDate }) => localDateKey(workoutDate) === localDateKey(date)),
+        isToday: localDateKey(date) === localDateKey(today),
       };
     });
   });
+  readonly selectedWorkouts = computed(() => {
+    const selected = this.selectedDate();
+    return selected
+      ? this.workouts.filter(({ date }) => localDateKey(date) === localDateKey(selected))
+      : [];
+  });
 
-  readonly dayCards = computed(() =>
-    this.weekDays().map(({ date, label }) => ({
-      date,
-      label,
-      items: this.workouts.filter((workout) => this.dateKey(workout.date) === this.dateKey(date)),
-    })),
-  );
-
-  formatDay(date: Date): string {
-    return new Intl.DateTimeFormat('es', {
-      day: 'numeric',
-      month: 'short',
-    }).format(date);
+  previousMonth(): void {
+    const current = this.month();
+    this.month.set(new Date(current.getFullYear(), current.getMonth() - 1, 1));
+    this.selectedDate.set(null);
   }
 
-  private dateKey(date: Date): string {
-    const normalized = new Date(date);
-    normalized.setHours(0, 0, 0, 0);
-    return normalized.toISOString().slice(0, 10);
+  nextMonth(): void {
+    const current = this.month();
+    this.month.set(new Date(current.getFullYear(), current.getMonth() + 1, 1));
+    this.selectedDate.set(null);
+  }
+
+  selectDay(date: Date | null): void {
+    if (date) {
+      this.selectedDate.set(date);
+    }
+  }
+
+  formatDay(date: Date): string {
+    return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(date);
+  }
+
+  isSelected(date: Date | null): boolean {
+    const selected = this.selectedDate();
+    return date !== null && selected !== null && localDateKey(date) === localDateKey(selected);
+  }
+
+  closeDayDetails(): void {
+    this.selectedDate.set(null);
   }
 }
