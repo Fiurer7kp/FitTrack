@@ -7,65 +7,128 @@ import { Component, OnDestroy, signal } from '@angular/core';
   templateUrl: './timer.html',
 })
 export class Timer implements OnDestroy {
-  readonly presets = [15, 25, 45, 60];
-  readonly duration = signal(25 * 60);
-  readonly remainingSeconds = signal(25 * 60);
-  readonly running = signal(false);
+  readonly restPresets = [30, 60, 90, 120];
+  readonly stopwatchSeconds = signal(0);
+  readonly stopwatchRunning = signal(false);
+  readonly restDurationSeconds = signal(60);
+  readonly restRemainingSeconds = signal(60);
+  readonly restRunning = signal(false);
+  readonly restFinished = signal(false);
+  readonly customRestInput = signal('60');
 
-  private timerHandle: number | null = null;
+  private stopwatchHandle: number | null = null;
+  private restHandle: number | null = null;
 
   ngOnDestroy(): void {
-    this.stop();
+    this.stopStopwatch();
+    this.stopRest();
   }
 
-  setPreset(minutes: number): void {
-    this.stop();
-    const totalSeconds = minutes * 60;
-    this.duration.set(totalSeconds);
-    this.remainingSeconds.set(totalSeconds);
-  }
-
-  start(): void {
-    if (this.running() || this.remainingSeconds() <= 0) {
+  startStopwatch(): void {
+    if (this.stopwatchRunning()) {
       return;
     }
 
-    this.running.set(true);
-    this.timerHandle = window.setInterval(() => {
-      this.remainingSeconds.update((value) => {
-        if (value <= 1) {
-          this.stop();
+    this.stopwatchRunning.set(true);
+    this.stopwatchHandle = window.setInterval(() => {
+      this.stopwatchSeconds.update((seconds) => seconds + 1);
+    }, 1000);
+  }
+
+  pauseStopwatch(): void {
+    this.stopStopwatch();
+  }
+
+  resetStopwatch(): void {
+    this.stopStopwatch();
+    this.stopwatchSeconds.set(0);
+  }
+
+  setRestPreset(seconds: number): void {
+    this.stopRest();
+    this.restFinished.set(false);
+    this.restDurationSeconds.set(seconds);
+    this.restRemainingSeconds.set(seconds);
+    this.customRestInput.set(String(seconds));
+  }
+
+  updateCustomRestInput(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.customRestInput.set(event.target.value);
+    }
+  }
+
+  applyCustomRest(): void {
+    const seconds = Number(this.customRestInput());
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > 3600) {
+      return;
+    }
+
+    this.setRestPreset(seconds);
+  }
+
+  startRest(): void {
+    if (this.restRunning() || this.restRemainingSeconds() <= 0) {
+      return;
+    }
+
+    this.restFinished.set(false);
+    this.restRunning.set(true);
+    this.restHandle = window.setInterval(() => {
+      this.restRemainingSeconds.update((seconds) => {
+        if (seconds <= 1) {
+          this.stopRest();
+          this.restFinished.set(true);
           return 0;
         }
 
-        return value - 1;
+        return seconds - 1;
       });
     }, 1000);
   }
 
-  pause(): void {
-    this.stop();
+  pauseRest(): void {
+    this.stopRest();
   }
 
-  reset(): void {
-    this.stop();
-    this.remainingSeconds.set(this.duration());
+  resetRest(): void {
+    this.stopRest();
+    this.restFinished.set(false);
+    this.restRemainingSeconds.set(this.restDurationSeconds());
   }
 
-  get formattedTime(): string {
-    const totalSeconds = this.remainingSeconds();
-    const minutes = Math.floor(totalSeconds / 60)
+  formatTime(totalSeconds: number): string {
+    const hours = Math.floor(totalSeconds / 3600)
+      .toString()
+      .padStart(2, '0');
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
       .toString()
       .padStart(2, '0');
     const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
+    return `${hours}:${minutes}:${seconds}`;
   }
 
-  private stop(): void {
-    this.running.set(false);
-    if (this.timerHandle !== null) {
-      window.clearInterval(this.timerHandle);
-      this.timerHandle = null;
+  get stopwatchTime(): string {
+    return this.formatTime(this.stopwatchSeconds());
+  }
+
+  get restTime(): string {
+    return this.formatTime(this.restRemainingSeconds());
+  }
+
+  private stopStopwatch(): void {
+    this.stopwatchRunning.set(false);
+    if (this.stopwatchHandle !== null) {
+      window.clearInterval(this.stopwatchHandle);
+      this.stopwatchHandle = null;
+    }
+  }
+
+  private stopRest(): void {
+    this.restRunning.set(false);
+    if (this.restHandle !== null) {
+      window.clearInterval(this.restHandle);
+      this.restHandle = null;
     }
   }
 }

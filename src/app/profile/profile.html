@@ -10,8 +10,19 @@
       </a>
     </header>
 
-    <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <section class="rounded-2xl border border-brand-border bg-brand-card p-6">
+    @if (errorMessage()) {
+      <p class="mb-4 rounded-xl border border-brand-danger/40 bg-brand-danger/10 p-4 text-sm text-red-300" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+    @if (successMessage()) {
+      <p class="mb-4 rounded-xl border border-brand-neon/40 bg-brand-neon/10 p-4 text-sm text-brand-neon" role="status">
+        {{ successMessage() }}
+      </p>
+    }
+
+    <section class="rounded-2xl border border-brand-border bg-brand-card p-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <div class="flex h-16 w-16 items-center justify-center rounded-full bg-brand-neon/15 text-xl font-bold text-brand-neon">
             {{ userName.charAt(0).toUpperCase() }}
@@ -21,31 +32,80 @@
             <p class="text-neutral-400">{{ userEmail }}</p>
           </div>
         </div>
+        @if (!editing()) {
+          <button type="button" class="btn-neon" (click)="startEditing()">Editar perfil</button>
+        }
+      </div>
 
-        <div class="mt-6 grid gap-4 sm:grid-cols-3">
-          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
-            <p class="text-sm text-neutral-400">Sesiones</p>
-            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().workouts }}</p>
-          </article>
-          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
-            <p class="text-sm text-neutral-400">Meta semanal</p>
-            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().metrics.goalProgress }}%</p>
-          </article>
-          <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
-            <p class="text-sm text-neutral-400">Racha</p>
-            <p class="mt-2 font-heading text-2xl font-bold text-white">{{ stats().metrics.streakDays }} días</p>
-          </article>
-        </div>
-      </section>
+      @if (editing()) {
+        <form class="mt-6 grid gap-4 sm:grid-cols-2" [formGroup]="form" (ngSubmit)="saveProfile()" novalidate>
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="profile-name">Nombre</label>
+            <input id="profile-name" class="input" formControlName="name" autocomplete="name">
+            @if (form.controls.name.invalid && form.controls.name.touched) {
+              <p class="mt-1 text-xs text-red-400" role="alert">Escribe tu nombre.</p>
+            }
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="profile-weight">Peso (kg)</label>
+            <input id="profile-weight" class="input" type="number" min="0.1" step="0.1" formControlName="weightKg">
+            @if (form.controls.weightKg.invalid && form.controls.weightKg.touched) {
+              <p class="mt-1 text-xs text-red-400" role="alert">El peso debe ser un valor positivo.</p>
+            }
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="profile-height">Altura (cm)</label>
+            <input id="profile-height" class="input" type="number" min="0.1" step="0.1" formControlName="heightCm">
+            @if (form.controls.heightCm.invalid && form.controls.heightCm.touched) {
+              <p class="mt-1 text-xs text-red-400" role="alert">La altura debe ser un valor positivo.</p>
+            }
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="profile-goal">Objetivo</label>
+            <input id="profile-goal" class="input" formControlName="goal" placeholder="Ej. Ganar fuerza">
+          </div>
+          <div class="flex flex-wrap gap-3 sm:col-span-2">
+            <button type="submit" class="btn-neon">Guardar cambios</button>
+            <button type="button" class="rounded-lg border border-brand-border px-5 py-3 text-sm text-neutral-200" (click)="cancelEditing()">Cancelar</button>
+          </div>
+        </form>
+      } @else {
+        <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <dt class="text-sm text-neutral-400">Peso</dt>
+            <dd class="mt-1 text-white">{{ weightKg === null ? 'Sin registrar' : weightKg + ' kg' }}</dd>
+          </div>
+          <div class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <dt class="text-sm text-neutral-400">Altura</dt>
+            <dd class="mt-1 text-white">{{ heightCm === null ? 'Sin registrar' : heightCm + ' cm' }}</dd>
+          </div>
+          <div class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+            <dt class="text-sm text-neutral-400">Objetivo</dt>
+            <dd class="mt-1 text-white">{{ goal || 'Sin definir' }}</dd>
+          </div>
+        </dl>
+      }
+    </section>
 
-      <aside class="rounded-2xl border border-brand-border bg-brand-card p-6">
-        <h2 class="font-heading text-xl font-semibold text-white">Objetivos</h2>
-        <ul class="mt-5 space-y-4 text-sm text-neutral-300">
-          <li class="rounded-xl bg-brand-black/40 p-3">4 entrenamientos por semana</li>
-          <li class="rounded-xl bg-brand-black/40 p-3">Mantener la progresión de fuerza</li>
-          <li class="rounded-xl bg-brand-black/40 p-3">Priorizar la recuperación y la consistencia</li>
-        </ul>
-      </aside>
-    </div>
+    <section class="mt-8" aria-labelledby="statistics-title">
+      <h2 id="statistics-title" class="mb-4 font-heading text-xl font-semibold text-white">Estadísticas generales</h2>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <article class="rounded-2xl border border-brand-border bg-brand-card p-5">
+          <h3 class="text-sm font-medium text-neutral-300">Entrenamientos</h3>
+          <p class="mt-3 font-heading text-3xl font-bold text-white">{{ stats().totalWorkouts }}</p>
+          <p class="mt-2 text-sm text-neutral-400">Sesiones registradas</p>
+        </article>
+        <article class="rounded-2xl border border-brand-border bg-brand-card p-5">
+          <h3 class="text-sm font-medium text-neutral-300">Mejor racha</h3>
+          <p class="mt-3 font-heading text-3xl font-bold text-white">{{ stats().bestStreak }} días</p>
+          <p class="mt-2 text-sm text-neutral-400">Días consecutivos</p>
+        </article>
+        <article class="rounded-2xl border border-brand-border bg-brand-card p-5">
+          <h3 class="text-sm font-medium text-neutral-300">Volumen total</h3>
+          <p class="mt-3 font-heading text-3xl font-bold text-white">{{ stats().totalVolumeKg.toLocaleString('es') }} kg</p>
+          <p class="mt-2 text-sm text-neutral-400">Peso × repeticiones × series</p>
+        </article>
+      </div>
+    </section>
   </div>
 </main>
