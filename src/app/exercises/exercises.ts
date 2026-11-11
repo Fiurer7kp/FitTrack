@@ -1,10 +1,11 @@
 import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Exercise, ExerciseInput, MUSCLE_GROUPS, MuscleGroup } from './exercise';
 import { ExerciseService } from './exercise.service';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   selector: 'app-exercises',
   styleUrl: './exercises.scss',
   templateUrl: './exercises.html',
