@@ -4,11 +4,23 @@
       <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
         Fit<span class="text-brand-neon">Track</span>
       </a>
-      <nav class="flex items-center gap-3">
-        <a routerLink="/exercises" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+      <nav class="flex flex-wrap items-center justify-end gap-2">
+        <a routerLink="/exercises" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
           Ejercicios
         </a>
-        <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white" (click)="logout()">
+        <a routerLink="/routines" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+          Rutinas
+        </a>
+        <a routerLink="/calendar" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+          Calendario
+        </a>
+        <a routerLink="/timer" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+          Timer
+        </a>
+        <a routerLink="/profile" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+          Perfil
+        </a>
+        <button type="button" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white" (click)="logout()">
           Cerrar sesión
         </button>
       </nav>

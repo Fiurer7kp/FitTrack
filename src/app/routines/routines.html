@@ -1,1 +1,94 @@
-<p>routines works!</p>
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Programación</p>
+        <h1 class="font-heading text-3xl font-bold text-white">Rutinas</h1>
+      </div>
+      <a href="/dashboard" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
+        Volver al dashboard
+      </a>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section class="rounded-2xl border border-brand-border bg-brand-card p-6">
+        <h2 class="font-heading text-xl font-semibold text-white">Nueva rutina</h2>
+
+        <form [formGroup]="form" class="mt-5 space-y-4" (ngSubmit)="saveRoutine()" novalidate>
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="routine-name">Nombre</label>
+            <input id="routine-name" formControlName="name" class="input" placeholder="Empuje superior" />
+          </div>
+
+          <div>
+            <label class="mb-1.5 block text-sm text-neutral-300" for="routine-day">Día</label>
+            <select id="routine-day" formControlName="dayOfWeek" class="input">
+              @for (day of dayOptions; track day) {
+                <option [value]="day">{{ day }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <p class="mb-2 text-sm text-neutral-300">Ejercicios incluidos</p>
+            @if (availableExercises().length === 0) {
+              <p class="rounded-xl border border-brand-border bg-brand-black/30 p-3 text-sm text-neutral-400">
+                Primero crea ejercicios en la biblioteca para poder usarlos en la rutina.
+              </p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                @for (exercise of availableExercises(); track exercise.id) {
+                  <button
+                    type="button"
+                    class="rounded-full border px-3 py-2 text-sm transition"
+                    [class]="form.controls.exerciseIds.value.includes(exercise.id) ? 'border-brand-neon bg-brand-neon/10 text-brand-neon' : 'border-brand-border text-neutral-300 hover:border-neutral-500'"
+                    (click)="toggleExercise(exercise.id)"
+                  >
+                    {{ exercise.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <button type="submit" class="btn-neon w-full">Guardar rutina</button>
+        </form>
+      </section>
+
+      <section class="rounded-2xl border border-brand-border bg-brand-card p-6">
+        <h2 class="font-heading text-xl font-semibold text-white">Plan semanal</h2>
+
+        <div class="mt-5 space-y-3">
+          @if (routines().length === 0) {
+            <p class="rounded-xl border border-brand-border bg-brand-black/30 p-4 text-sm text-neutral-400">
+              Aún no tienes rutinas. Crea tu primer plan para estructurar la semana.
+            </p>
+          } @else {
+            @for (routine of routines(); track routine.id) {
+              <article class="rounded-xl border border-brand-border bg-brand-black/40 p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 class="font-semibold text-white">{{ routine.name }}</h3>
+                    <p class="mt-1 text-sm text-neutral-400">{{ routine.dayOfWeek }}</p>
+                  </div>
+                  <button type="button" class="text-sm text-red-400 underline underline-offset-4" (click)="deleteRoutine(routine.id)">
+                    Eliminar
+                  </button>
+                </div>
+                <ul class="mt-3 space-y-1 text-sm text-neutral-300">
+                  @if (routine.exerciseIds.length === 0) {
+                    <li>Sin ejercicios seleccionados.</li>
+                  } @else {
+                    @for (exerciseId of routine.exerciseIds; track exerciseId) {
+                      <li>• {{ getExerciseName(exerciseId) }}</li>
+                    }
+                  }
+                </ul>
+              </article>
+            }
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
