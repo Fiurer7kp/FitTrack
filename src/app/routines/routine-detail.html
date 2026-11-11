@@ -1,0 +1,43 @@
+<main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-4xl">
+    <header class="mb-8">
+      <a href="/routines" class="text-sm text-brand-neon underline underline-offset-4">← Volver a rutinas</a>
+    </header>
+
+    @if (errorMessage()) {
+      <section class="rounded-2xl border border-brand-danger/40 bg-brand-card p-6" role="alert">
+        <h1 class="font-heading text-2xl font-bold text-white">Rutina no disponible</h1>
+        <p class="mt-2 text-neutral-300">{{ errorMessage() }}</p>
+      </section>
+    } @else if (routine(); as selectedRoutine) {
+      <header class="mb-6">
+        <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">{{ selectedRoutine.dayOfWeek }}</p>
+        <h1 class="mt-1 font-heading text-3xl font-bold text-white">{{ selectedRoutine.name }}</h1>
+        <p class="mt-2 text-neutral-400">{{ selectedRoutine.exerciseIds.length }} ejercicios</p>
+      </header>
+
+      <section class="space-y-3" aria-label="Ejercicios de la rutina">
+        @for (exerciseId of selectedRoutine.exerciseIds; track exerciseId) {
+          @if (getExercise(exerciseId); as exercise) {
+            <article class="rounded-2xl border border-brand-border bg-brand-card p-5">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <h2 class="font-heading text-xl font-semibold text-white">{{ exercise.name }}</h2>
+                <span class="rounded-full bg-brand-neon/10 px-3 py-1 text-xs font-medium text-brand-neon">{{ exercise.muscleGroup }}</span>
+              </div>
+              <dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                <div><dt class="text-neutral-400">Series</dt><dd class="mt-1 font-medium text-white">{{ exercise.sets }}</dd></div>
+                <div><dt class="text-neutral-400">Repeticiones</dt><dd class="mt-1 font-medium text-white">{{ exercise.reps }}</dd></div>
+                <div><dt class="text-neutral-400">Peso</dt><dd class="mt-1 font-medium text-white">{{ exercise.weightKg === null ? 'Peso corporal' : exercise.weightKg + ' kg' }}</dd></div>
+              </dl>
+              @if (exercise.notes) {
+                <p class="mt-3 border-t border-brand-border pt-3 text-sm text-neutral-300">{{ exercise.notes }}</p>
+              }
+            </article>
+          } @else {
+            <p class="rounded-xl border border-brand-border bg-brand-card p-4 text-neutral-300">Un ejercicio de esta rutina ya no está disponible.</p>
+          }
+        }
+      </section>
+    }
+  </div>
+</main>
