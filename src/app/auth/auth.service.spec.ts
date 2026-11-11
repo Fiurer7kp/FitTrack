@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     window.localStorage.clear();
     TestBed.configureTestingModule({
       providers: [{ provide: PLATFORM_ID, useValue: 'browser' }],
@@ -62,5 +63,34 @@ describe('AuthService', () => {
     expect(setItem).toHaveBeenCalled();
     expect(service.isAuthenticated()).toBe(false);
     expect(service.sessionNotice()).toContain('no se pudo actualizar el almacenamiento');
+  });
+
+  it('updates and persists the signed-in user profile', async () => {
+    const service = TestBed.inject(AuthService);
+    await service.register('Ana', 'ana@example.com', 'password123');
+
+    expect(
+      service.updateProfile({
+        name: 'Ana María',
+        weightKg: 64.5,
+        heightCm: 168,
+        goal: 'Ganar fuerza',
+      }),
+    ).toEqual({ success: true });
+
+    expect(service.currentUser()).toEqual({
+      name: 'Ana María',
+      email: 'ana@example.com',
+      weightKg: 64.5,
+      heightCm: 168,
+      goal: 'Ganar fuerza',
+    });
+    const stored = JSON.parse(window.localStorage.getItem('fittrack.auth') ?? '{}');
+    expect(stored.accounts[0]).toMatchObject({
+      name: 'Ana María',
+      weightKg: 64.5,
+      heightCm: 168,
+      goal: 'Ganar fuerza',
+    });
   });
 });
