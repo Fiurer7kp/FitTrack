@@ -75,4 +75,22 @@ describe('Calendar', () => {
 
     expect(component.workouts().some(({ id }) => id === session.id)).toBe(false);
   });
+
+  it('shows the recorded weight and repetitions for each exercise set', () => {
+    const session = {
+      ...component.workouts()[0],
+      exercises: [{
+        name: 'Press de banca',
+        sets: 1,
+        reps: 6,
+        weightKg: 65,
+        setDetails: [{ reps: 6, weightKg: 65 }],
+      }],
+    };
+    component.workouts.set([session]);
+    component.selectDay(session.date);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Serie 1: 6 rep × 65 kg');
+  });
 });

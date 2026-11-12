@@ -95,6 +95,24 @@
                     <div>
                       <h3 class="font-semibold text-white">{{ workout.name }}</h3>
                       <p class="mt-1 text-sm text-neutral-400">{{ workout.durationMinutes }} min · {{ workout.exercises.length }} ejercicios · {{ workout.caloriesBurned }} kcal</p>
+                      @if (workout.exercises.length > 0) {
+                        <ul class="mt-3 space-y-2 text-sm text-neutral-300" aria-label="Ejercicios realizados">
+                          @for (exercise of workout.exercises; track $index) {
+                            <li>
+                              <span class="font-medium text-white">{{ exercise.name }}</span>
+                              @if (exercise.setDetails; as setDetails) {
+                                <ul class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">
+                                  @for (set of setDetails; track $index; let setIndex = $index) {
+                                    <li>Serie {{ setIndex + 1 }}: {{ set.reps }} rep × {{ set.weightKg }} kg</li>
+                                  }
+                                </ul>
+                              } @else {
+                                <span class="ml-2 text-xs text-neutral-400">{{ exercise.sets }} × {{ exercise.reps }} rep @ {{ exercise.weightKg }} kg</span>
+                              }
+                            </li>
+                          }
+                        </ul>
+                      }
                     </div>
                     <div class="flex gap-2">
                       <button type="button" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-200 hover:border-neutral-500" [attr.aria-label]="'Editar sesión ' + workout.name" (click)="startEdit(workout)">Editar</button>

@@ -1,6 +1,7 @@
 import {
   addWorkoutSession,
   calculateWeeklyMetrics,
+  getPersonalRecords,
   getProgressPoints,
   getRecentWorkouts,
   getStoredWorkouts,
@@ -95,6 +96,42 @@ describe('dashboard workout calculations', () => {
 
   it('returns an empty series when the selected range contains no weighted workouts', () => {
     expect(getProgressPoints([], 90, new Date('2026-11-10T18:00:00'))).toEqual([]);
+  });
+
+  it('calculates personal records from logged sets, preferring the latest date on a tie', () => {
+    const workouts: Workout[] = [
+      {
+        ...workout('bench-first', '2026-11-10'),
+        exercises: [{
+          name: 'Press de banca',
+          sets: 2,
+          reps: 8,
+          weightKg: 70,
+          setDetails: [{ reps: 8, weightKg: 70 }],
+        }],
+      },
+      {
+        ...workout('bench-latest', '2026-11-12'),
+        exercises: [{
+          name: 'press de banca',
+          sets: 2,
+          reps: 6,
+          weightKg: 70,
+          setDetails: [{ reps: 6, weightKg: 70 }],
+        }],
+      },
+      workout('legacy-example', '2026-11-12'),
+    ];
+
+    expect(getPersonalRecords(workouts)).toEqual([
+      {
+        id: 'press de banca',
+        exerciseName: 'press de banca',
+        weightKg: 70,
+        reps: 6,
+        date: new Date('2026-11-12T12:00:00'),
+      },
+    ]);
   });
 
   it('falls back to demo data and then persists a real workout session', () => {

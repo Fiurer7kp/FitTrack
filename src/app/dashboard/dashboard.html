@@ -144,6 +144,28 @@
       }
     </section>
 
+    <section class="mt-10" aria-labelledby="personal-records-title">
+      <div class="mb-4">
+        <h2 id="personal-records-title" class="font-heading text-xl font-semibold">Récords personales</h2>
+        <p class="mt-1 text-sm text-neutral-400">Tu mayor carga registrada en una serie por ejercicio.</p>
+      </div>
+      @if (personalRecords().length > 0) {
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (record of personalRecords(); track record.id) {
+            <article class="rounded-xl border border-brand-border bg-brand-card p-4">
+              <h3 class="font-semibold text-white">{{ record.exerciseName }}</h3>
+              <p class="mt-2 font-heading text-2xl font-bold text-brand-neon">{{ record.weightKg }} kg</p>
+              <p class="mt-1 text-sm text-neutral-400">{{ record.reps }} repeticiones · {{ formatDate(record.date) }}</p>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="rounded-xl border border-brand-border bg-brand-card p-5 text-neutral-300">
+          Tus récords aparecerán cuando guardes una sesión con ejercicios y series registradas.
+        </p>
+      }
+    </section>
+
     <section class="mt-10" aria-labelledby="recent-workouts-title">
       <div class="mb-4 flex items-end justify-between gap-4">
         <div>

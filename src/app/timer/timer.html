@@ -27,6 +27,71 @@
           <input id="session-name" class="input w-full" type="text" [value]="sessionName()" (input)="updateSessionName($event)" maxlength="60" />
         </div>
 
+        <section class="mt-6 rounded-2xl border border-brand-border p-4 text-left" aria-labelledby="exercise-log-title">
+          <div class="mb-4">
+            <h3 id="exercise-log-title" class="font-semibold text-white">Ejercicios y series</h3>
+            <p class="mt-1 text-sm text-neutral-400">Registra las repeticiones y el peso de cada serie.</p>
+          </div>
+
+          @if (availableExercises().length > 0) {
+            <div class="flex flex-col gap-2 sm:flex-row">
+              <label class="sr-only" for="exercise-to-add">Seleccionar ejercicio</label>
+              <select id="exercise-to-add" class="input min-w-0 flex-1" [value]="selectedExerciseId()" (change)="updateSelectedExercise($event)">
+                <option value="">Selecciona un ejercicio</option>
+                @for (exercise of availableExercises(); track exercise.id) {
+                  <option [value]="exercise.id">{{ exercise.name }}</option>
+                }
+              </select>
+              <button type="button" class="rounded-lg border border-brand-border px-4 py-2 text-sm text-neutral-200 transition hover:border-neutral-500" (click)="addExercise()" [disabled]="!selectedExerciseId()">
+                Agregar
+              </button>
+            </div>
+
+            <div class="mt-4 space-y-4">
+              @for (exercise of exerciseDrafts(); track exercise.id) {
+                <article class="rounded-xl border border-brand-border bg-brand-black/20 p-4">
+                  <div class="mb-4 flex items-center justify-between gap-3">
+                    <h4 class="font-semibold text-white">{{ exercise.name }}</h4>
+                    <button type="button" class="text-sm text-red-300 underline underline-offset-2" [attr.aria-label]="'Quitar ' + exercise.name" (click)="removeExercise(exercise.id)">
+                      Quitar
+                    </button>
+                  </div>
+
+                  <div class="space-y-3">
+                    @for (set of exercise.sets; track set.id; let index = $index) {
+                      <div class="grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2">
+                        <span class="pb-2 text-xs text-neutral-400">Serie {{ index + 1 }}</span>
+                        <div>
+                          <label class="mb-1 block text-xs text-neutral-400" [for]="'reps-' + set.id">Repeticiones</label>
+                          <input class="input w-full" [id]="'reps-' + set.id" type="number" min="1" step="1" required [value]="set.reps" (input)="updateSet(exercise.id, set.id, 'reps', $event)">
+                        </div>
+                        <div>
+                          <label class="mb-1 block text-xs text-neutral-400" [for]="'weight-' + set.id">Peso (kg)</label>
+                          <input class="input w-full" [id]="'weight-' + set.id" type="number" min="0" step="0.5" required [value]="set.weightKg" (input)="updateSet(exercise.id, set.id, 'weightKg', $event)">
+                        </div>
+                        <button type="button" class="mb-1 rounded border border-brand-border px-2 py-1 text-sm text-neutral-300 disabled:opacity-40" [attr.aria-label]="'Quitar serie ' + (index + 1) + ' de ' + exercise.name" [disabled]="exercise.sets.length === 1" (click)="removeSet(exercise.id, set.id)">
+                          ×
+                        </button>
+                      </div>
+                    }
+                  </div>
+
+                  <button type="button" class="mt-4 text-sm font-medium text-brand-neon underline underline-offset-2" (click)="addSet(exercise.id)">
+                    + Agregar serie
+                  </button>
+                </article>
+              } @empty {
+                <p class="rounded-lg bg-brand-black/20 p-3 text-sm text-neutral-400">Agrega los ejercicios realizados para guardar su progreso.</p>
+              }
+            </div>
+          } @else {
+            <p class="text-sm text-neutral-400">
+              Primero agrega ejercicios a tu
+              <a routerLink="/exercises" class="font-medium text-brand-neon underline underline-offset-2">biblioteca</a>.
+            </p>
+          }
+        </section>
+
         <div class="mt-6 flex justify-center">
           <button type="button" class="rounded-lg bg-brand-neon px-5 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50" (click)="saveSession()" [disabled]="stopwatchSeconds() === 0">
             Guardar sesión

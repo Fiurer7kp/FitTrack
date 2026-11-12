@@ -6,6 +6,7 @@ import { ThemeService } from '../theme.service';
 import {
   calculateWeeklyMetrics,
   getProgressPoints,
+  getPersonalRecords,
   getRecentWorkouts,
   getStoredWorkouts,
   removeWorkoutSession,
@@ -27,6 +28,7 @@ export class Dashboard {
   readonly sessionError = signal<string | null>(null);
   readonly workouts = signal(this.loadWorkouts());
   readonly metrics = computed(() => calculateWeeklyMetrics(this.workouts(), this.weeklyGoal));
+  readonly personalRecords = computed(() => getPersonalRecords(this.workouts()));
   readonly recentWorkouts = computed(() => getRecentWorkouts(this.workouts()));
   readonly getWorkoutVolumeKg = getWorkoutVolumeKg;
   readonly progressRange = signal<30 | 90>(30);

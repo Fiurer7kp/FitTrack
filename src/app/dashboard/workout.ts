@@ -3,6 +3,12 @@ export interface WorkoutExercise {
   sets: number;
   reps: number;
   weightKg: number;
+  setDetails?: WorkoutSet[];
+}
+
+export interface WorkoutSet {
+  reps: number;
+  weightKg: number;
 }
 
 export interface Workout {
@@ -28,6 +34,14 @@ export interface ProgressPoint {
   weightKg: number;
   x: number;
   y: number;
+}
+
+export interface PersonalRecord {
+  id: string;
+  exerciseName: string;
+  weightKg: number;
+  reps: number;
+  date: Date;
 }
 
 const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
@@ -219,7 +233,13 @@ export function getProgressPoints(
     .map((workout) => ({
       workout,
       daysAgo: today - localDayNumber(workout.date),
-      weightKg: Math.max(0, ...workout.exercises.map(({ weightKg }) => weightKg)),
+      weightKg: Math.max(
+        0,
+        ...workout.exercises.flatMap(({ weightKg, setDetails }) => [
+          weightKg,
+          ...(setDetails?.map(({ weightKg: setWeight }) => setWeight) ?? []),
+        ]),
+      ),
     }))
     .filter(({ daysAgo, weightKg }) => daysAgo >= 0 && daysAgo < rangeDays && weightKg > 0)
     .sort((first, second) => first.workout.date.getTime() - second.workout.date.getTime());
@@ -246,8 +266,47 @@ export function getProgressPoints(
 
 export function getWorkoutVolumeKg(workout: Workout): number {
   return workout.exercises.reduce(
-    (volume, exercise) => volume + exercise.sets * exercise.reps * exercise.weightKg,
+    (volume, exercise) =>
+      volume +
+      (exercise.setDetails
+        ? exercise.setDetails.reduce((setVolume, set) => setVolume + set.reps * set.weightKg, 0)
+        : exercise.sets * exercise.reps * exercise.weightKg),
     0,
+  );
+}
+
+export function getPersonalRecords(workouts: Workout[]): PersonalRecord[] {
+  const records = new Map<string, PersonalRecord>();
+
+  for (const workout of workouts) {
+    for (const exercise of workout.exercises) {
+      for (const set of exercise.setDetails ?? []) {
+        if (set.weightKg <= 0) {
+          continue;
+        }
+
+        const key = exercise.name.trim().toLocaleLowerCase('es');
+        const previous = records.get(key);
+        if (
+          !previous ||
+          set.weightKg > previous.weightKg ||
+          (set.weightKg === previous.weightKg && workout.date > previous.date)
+        ) {
+          records.set(key, {
+            id: key,
+            exerciseName: exercise.name,
+            weightKg: set.weightKg,
+            reps: set.reps,
+            date: workout.date,
+          });
+        }
+      }
+    }
+  }
+
+  return [...records.values()].sort(
+    (first, second) =>
+      second.weightKg - first.weightKg || first.exerciseName.localeCompare(second.exerciseName, 'es'),
   );
 }
 
@@ -350,12 +409,46 @@ function normalizeExercise(exercise: unknown): WorkoutExercise | null {
     return null;
   }
 
+  let setDetails: WorkoutSet[] | undefined;
+  if (record['setDetails'] !== undefined) {
+    if (!Array.isArray(record['setDetails'])) {
+      return null;
+    }
+
+    const parsedSets = record['setDetails'].map((set) => normalizeWorkoutSet(set));
+    if (parsedSets.some((set) => set === null)) {
+      return null;
+    }
+    setDetails = parsedSets.filter((set): set is WorkoutSet => set !== null);
+  }
+
   return {
     name: record['name'],
     sets: Math.max(0, Math.round(record['sets'])),
     reps: Math.max(0, Math.round(record['reps'])),
     weightKg: Math.max(0, Number(record['weightKg'])),
+    ...(setDetails ? { setDetails } : {}),
   };
+}
+
+function normalizeWorkoutSet(value: unknown): WorkoutSet | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (
+    typeof record['reps'] !== 'number' ||
+    !Number.isInteger(record['reps']) ||
+    record['reps'] < 1 ||
+    typeof record['weightKg'] !== 'number' ||
+    !Number.isFinite(record['weightKg']) ||
+    record['weightKg'] < 0
+  ) {
+    return null;
+  }
+
+  return { reps: record['reps'], weightKg: record['weightKg'] };
 }
 
 function normalizeDate(value: unknown): Date | null {
