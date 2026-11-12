@@ -7,13 +7,15 @@ Aplicación de seguimiento de entrenamiento construida con Angular 22 y Tailwind
 - Registro, inicio y cierre de sesión con cuentas guardadas en el navegador.
 - Biblioteca de ejercicios con búsqueda, filtros y operaciones CRUD.
 - Creación, edición, eliminación y detalle de rutinas semanales.
-- Calendario mensual con días de entrenamiento y edición y eliminación de sesiones.
+- Registro de sesiones con ejercicios y detalle de repeticiones y peso por serie; cálculo de récords personales.
+- Calendario mensual para consultar sesiones, editarlas/eliminarlas y planificar o cancelar rutinas.
+- Historial de peso y cintura con medidas fechadas y tendencias en el perfil.
 - Edición del perfil y estadísticas generales.
 - Cronómetro de entrenamiento que permite guardar sesiones y temporizador de descanso configurable.
 - Tema claro/oscuro con preferencia guardada en el navegador.
 - Dashboard con métricas, gráfica de progreso e historial reciente con opción para eliminar sesiones.
 
-Los datos de ejemplo se muestran cuando todavía no hay un historial guardado. Las sesiones se separan por cuenta, pero los datos de las cuentas, rutinas, ejercicios y sesiones se almacenan localmente en el navegador; no hay servidor ni sincronización entre dispositivos. FitTrack es un prototipo académico, no un servicio de autenticación o almacenamiento de producción.
+Los datos de ejemplo se muestran cuando todavía no hay un historial guardado. Los historiales de sesiones y medidas, las rutinas y los planes del calendario se separan por cuenta y se guardan localmente en el navegador; no hay servidor ni sincronización entre dispositivos. FitTrack es un prototipo académico, no un servicio de autenticación o almacenamiento de producción.
 
 ## Desarrollo
 

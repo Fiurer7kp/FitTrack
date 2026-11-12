@@ -87,6 +87,91 @@
       }
     </section>
 
+    <section class="mt-8 rounded-2xl border border-brand-border bg-brand-card p-6" aria-labelledby="body-measurements-title">
+      <div>
+        <p class="text-sm uppercase tracking-[0.2em] text-brand-neon">Progreso corporal</p>
+        <h2 id="body-measurements-title" class="mt-1 font-heading text-xl font-semibold text-white">Historial de medidas</h2>
+        <p class="mt-2 text-sm text-neutral-400">Registra peso y cintura para seguir su evolución. Puedes guardar una sola medida o ambas.</p>
+      </div>
+      @let trend = bodyMeasurementTrend();
+
+      @if (bodyMeasurementError()) {
+        <p class="mt-4 rounded-xl border border-brand-danger/40 bg-brand-danger/10 p-4 text-sm text-red-300" role="alert">
+          {{ bodyMeasurementError() }}
+        </p>
+      }
+      @if (bodyMeasurementSuccess()) {
+        <p class="mt-4 rounded-xl border border-brand-neon/40 bg-brand-neon/10 p-4 text-sm text-brand-neon" role="status">
+          {{ bodyMeasurementSuccess() }}
+        </p>
+      }
+
+      <form class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" [formGroup]="bodyMeasurementForm" (ngSubmit)="saveBodyMeasurement()" novalidate>
+        <div>
+          <label class="mb-1.5 block text-sm text-neutral-300" for="measurement-date">Fecha</label>
+          <input id="measurement-date" class="input w-full" type="date" required formControlName="date">
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm text-neutral-300" for="measurement-weight">Peso (kg)</label>
+          <input id="measurement-weight" class="input w-full" type="number" min="0.1" step="0.1" placeholder="Ej. 68.5" formControlName="weightKg">
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm text-neutral-300" for="measurement-waist">Cintura (cm)</label>
+          <input id="measurement-waist" class="input w-full" type="number" min="0.1" step="0.1" placeholder="Ej. 82" formControlName="waistCm">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="btn-neon w-full">Guardar medidas</button>
+        </div>
+      </form>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <article class="rounded-xl border border-brand-border bg-brand-black/30 p-4">
+          <h3 class="text-sm font-medium text-neutral-300">Cambio de peso</h3>
+          @if (trend.weightKg !== null) {
+            <p class="mt-2 text-lg font-semibold text-white">{{ trend.weightKg > 0 ? '+' : '' }}{{ trend.weightKg }} kg</p>
+            <p class="mt-1 text-xs text-neutral-400">Entre la primera y la última medida registrada</p>
+          } @else {
+            <p class="mt-2 text-sm text-neutral-400">Registra dos medidas de peso para ver la tendencia.</p>
+          }
+        </article>
+        <article class="rounded-xl border border-brand-border bg-brand-black/30 p-4">
+          <h3 class="text-sm font-medium text-neutral-300">Cambio de cintura</h3>
+          @if (trend.waistCm !== null) {
+            <p class="mt-2 text-lg font-semibold text-white">{{ trend.waistCm > 0 ? '+' : '' }}{{ trend.waistCm }} cm</p>
+            <p class="mt-1 text-xs text-neutral-400">Entre la primera y la última medida registrada</p>
+          } @else {
+            <p class="mt-2 text-sm text-neutral-400">Registra dos medidas de cintura para ver la tendencia.</p>
+          }
+        </article>
+      </div>
+
+      @if (bodyMeasurements().length > 0) {
+        <div class="mt-6 overflow-x-auto">
+          <table class="w-full min-w-[32rem] text-left text-sm">
+            <caption class="mb-2 text-left font-semibold text-white">Medidas registradas, de más reciente a más antigua</caption>
+            <thead class="border-b border-brand-border text-neutral-400">
+              <tr>
+                <th scope="col" class="px-3 py-2 font-medium">Fecha</th>
+                <th scope="col" class="px-3 py-2 font-medium">Peso</th>
+                <th scope="col" class="px-3 py-2 font-medium">Cintura</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (measurement of bodyMeasurements(); track measurement.id) {
+                <tr class="border-b border-brand-border/60 text-neutral-200">
+                  <td class="px-3 py-3">{{ formatMeasurementDate(measurement.date) }}</td>
+                  <td class="px-3 py-3">{{ measurement.weightKg === null ? '—' : measurement.weightKg + ' kg' }}</td>
+                  <td class="px-3 py-3">{{ measurement.waistCm === null ? '—' : measurement.waistCm + ' cm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="mt-6 rounded-xl border border-brand-border bg-brand-black/30 p-4 text-sm text-neutral-300">Todavía no hay medidas registradas. Añade tu primera para empezar a seguir la tendencia.</p>
+      }
+    </section>
+
     <section class="mt-8" aria-labelledby="statistics-title">
       <h2 id="statistics-title" class="mb-4 font-heading text-xl font-semibold text-white">Estadísticas generales</h2>
       <div class="grid gap-4 sm:grid-cols-3">

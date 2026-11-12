@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
+import { getBodyMeasurements } from './body-measurement';
 import { Profile } from './profile';
 
 describe('Profile', () => {
@@ -18,6 +19,7 @@ describe('Profile', () => {
   };
 
   beforeEach(async () => {
+    localStorage.clear();
     currentUser.set({
       name: 'Ana',
       email: 'ana@example.com',
@@ -73,5 +75,47 @@ describe('Profile', () => {
     });
     expect(component.editing()).toBe(false);
     expect(component.successMessage()).toBe('Perfil actualizado.');
+  });
+
+  it('stores dated body measurements per account and calculates the change over time', () => {
+    const component = fixture.componentInstance;
+    component.bodyMeasurementForm.setValue({
+      date: '2026-04-10',
+      weightKg: '70',
+      waistCm: '85',
+    });
+    component.saveBodyMeasurement();
+    component.bodyMeasurementForm.setValue({
+      date: '2026-05-10',
+      weightKg: '68.5',
+      waistCm: '82',
+    });
+    component.saveBodyMeasurement();
+
+    expect(component.bodyMeasurements()).toHaveLength(2);
+    expect(component.bodyMeasurements()[0]).toMatchObject({
+      date: '2026-05-10',
+      weightKg: 68.5,
+      waistCm: 82,
+    });
+    expect(component.bodyMeasurementTrend()).toEqual({ weightKg: -1.5, waistCm: -3 });
+    expect(
+      JSON.parse(localStorage.getItem('fittrack.body-measurements.ana%40example.com') ?? '[]'),
+    ).toHaveLength(2);
+    expect(getBodyMeasurements('other@example.com')).toEqual([]);
+  });
+
+  it('requires at least one measurement before saving', () => {
+    const component = fixture.componentInstance;
+    component.bodyMeasurementForm.setValue({
+      date: '2026-05-10',
+      weightKg: '',
+      waistCm: '',
+    });
+
+    component.saveBodyMeasurement();
+
+    expect(component.bodyMeasurements()).toEqual([]);
+    expect(component.bodyMeasurementError()).toContain('Registra el peso');
   });
 });

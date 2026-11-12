@@ -22,21 +22,21 @@ Acción en pantalla: cambiar el rango de la gráfica y abrir el registro de sesi
 
 ## 4. Registrar y gestionar sesiones (1 minuto)
 
-> “En el cronómetro puedo iniciar, pausar y reiniciar el tiempo. Al guardar, la sesión queda en el almacenamiento local del navegador. Desde el calendario puedo elegir un día, editar el nombre, fecha, duración y calorías, o eliminar la sesión. También puedo eliminar una sesión desde el dashboard.”
+> “En el cronómetro puedo iniciar, pausar y reiniciar el tiempo; también agrego ejercicios y registro repeticiones y peso por serie. Al guardar, la sesión queda en el historial local y el dashboard calcula los récords personales a partir de las series reales. Desde el calendario puedo editar o eliminar sesiones y planificar o cancelar rutinas en fechas concretas. Los planes se muestran diferentes de los entrenamientos ya completados.”
 
-Acción en pantalla: guardar una sesión breve, abrir el calendario, editarla y luego mostrar la confirmación de eliminación.
+Acción en pantalla: guardar una sesión breve con series, mostrar un récord en el dashboard, abrir el calendario y planificar una rutina para una fecha.
 
 > “La persistencia está encapsulada en las funciones del dominio de entrenamientos, en `src/app/dashboard/workout.ts`. Allí se normalizan las fechas al leer datos serializados y se validan los cambios antes de guardarlos. Si el almacenamiento falla, la interfaz muestra un mensaje en vez de indicar que la operación se completó.”
 
 ## 5. Componentes y otras secciones (50 segundos)
 
-> “La biblioteca de ejercicios permite buscar, filtrar y administrar ejercicios. Las rutinas permiten crear planes y consultar su detalle. El perfil edita los datos personales, y el temporizador de descanso tiene duraciones predefinidas y una duración personalizada. Cada sección mantiene su lógica en TypeScript, la presentación en HTML y los estilos en SCSS.”
+> “La biblioteca de ejercicios permite buscar, filtrar y administrar ejercicios. Las rutinas permiten crear planes semanales y consultar su detalle. En el perfil puedo guardar peso y cintura con fecha y revisar la diferencia entre la primera y la última medida. El temporizador de descanso tiene duraciones predefinidas y una duración personalizada. Cada sección mantiene su lógica en TypeScript, la presentación en HTML y los estilos en SCSS.”
 
-Acción en pantalla: enseñar brevemente ejercicios, rutinas y perfil.
+Acción en pantalla: enseñar brevemente ejercicios, rutinas y el historial de medidas del perfil.
 
 ## 6. Pruebas y compilación (45 segundos)
 
-> “Las pruebas están junto a los componentes y servicios, en archivos `.spec.ts`. Usamos el ejecutor de pruebas de Angular con Vitest y Chromium. Hay pruebas de cálculos, almacenamiento, autenticación, calendario, formularios y temporizadores. Se ejecutan con `npm test`; `npm run build` valida que la aplicación compile para producción.”
+> “Las pruebas están junto a los componentes y servicios, en archivos `.spec.ts`. Usamos el ejecutor de pruebas de Angular con Vitest y Chromium. Hay pruebas de cálculos, almacenamiento por cuenta, autenticación, edición y planificación de calendario, tendencias de medidas, formularios y temporizadores. Se ejecutan con `npm test`; `npm run build` valida que la aplicación compile para producción.”
 
 Mostrar en terminal:
 
@@ -55,9 +55,10 @@ npm run build
 - `src/app/app.ts` y `src/app/app.html`: componente raíz y `RouterOutlet`.
 - `src/app/auth/`: registro, login, sesión local y protección de rutas.
 - `src/app/dashboard/`: métricas, gráficas, historial y modelos/cálculos de entrenamientos.
-- `src/app/calendar/`: vista mensual y edición del historial por fecha.
-- `src/app/timer/`: cronómetro, temporizador de descanso y registro de una sesión.
-- `src/app/exercises/` y `src/app/routines/`: administración de ejercicios y rutinas.
+- `src/app/calendar/`: vista mensual, edición del historial y agenda de rutinas planificadas.
+- `src/app/timer/`: cronómetro, temporizador de descanso y registro de ejercicios por serie.
+- `src/app/profile/`: perfil y medidas corporales; `body-measurement.ts` valida y persiste el historial fechado.
+- `src/app/exercises/` y `src/app/routines/`: administración de ejercicios y rutinas semanales.
 - `src/app/**/*.spec.ts`: pruebas unitarias de componentes, servicios y lógica.
 
 La autenticación y los datos del prototipo usan `localStorage`; esto es adecuado para una demostración local, no para producción con datos reales.
