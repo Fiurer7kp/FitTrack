@@ -219,6 +219,7 @@ export class Timer implements OnDestroy {
       const setDetails = draft.sets.map(({ reps, weightKg }) => ({ reps, weightKg }));
       exercises.push({
         name: draft.name,
+        exerciseId: draft.exerciseId,
         sets: setDetails.length,
         reps: Math.round(setDetails.reduce((total, { reps }) => total + reps, 0) / setDetails.length),
         weightKg: Math.max(...setDetails.map(({ weightKg }) => weightKg)),

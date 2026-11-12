@@ -1,5 +1,6 @@
 export interface WorkoutExercise {
   name: string;
+  exerciseId?: string;
   sets: number;
   reps: number;
   weightKg: number;
@@ -42,6 +43,14 @@ export interface PersonalRecord {
   weightKg: number;
   reps: number;
   date: Date;
+}
+
+export interface ExerciseHistoryPoint {
+  id: string;
+  date: Date;
+  weightKg: number;
+  reps: number;
+  volumeKg: number;
 }
 
 const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
@@ -108,14 +117,19 @@ const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
   },
 ];
 
+const mockWorkoutDayOffsets = [0, -1, -2, -4, -7, -9, -14, -20, -27, -35, -44, -55, -67, -80, -89];
+const mockWorkoutIds = new Set(
+  mockWorkoutDayOffsets.map((_, index) => `${mockWorkoutTemplates[index % mockWorkoutTemplates.length].id}-${index}`),
+);
 const WORKOUT_STORAGE_KEY = 'fittrack.workouts';
 
 export function getStoredWorkouts(
   referenceDate: Date = new Date(),
   accountEmail = 'default',
+  includeDemoData = true,
 ): Workout[] {
   if (typeof window === 'undefined') {
-    return createMockWorkouts(referenceDate);
+    return includeDemoData ? createMockWorkouts(referenceDate) : [];
   }
 
   const key = workoutStorageKey(accountEmail);
@@ -129,7 +143,7 @@ export function getStoredWorkouts(
   }
 
   if (stored === null) {
-    return createMockWorkouts(referenceDate);
+    return includeDemoData ? createMockWorkouts(referenceDate) : [];
   }
 
   const parsed: unknown = JSON.parse(stored);
@@ -145,11 +159,51 @@ export function getStoredWorkouts(
   return workouts.filter((workout): workout is Workout => workout !== null);
 }
 
+export function getRecordedWorkouts(accountEmail = 'default'): Workout[] {
+  return getStoredWorkouts(new Date(), accountEmail, false).filter(({ id }) => !mockWorkoutIds.has(id));
+}
+
+export function getExerciseHistory(
+  workouts: Workout[],
+  exerciseId: string,
+  exerciseName: string,
+): ExerciseHistoryPoint[] {
+  const normalizedName = exerciseName.trim().toLocaleLowerCase('es');
+  return workouts
+    .flatMap((workout) =>
+      workout.exercises.flatMap((exercise, index) => {
+        const matchesId = exercise.exerciseId !== undefined && exercise.exerciseId === exerciseId;
+        const matchesLegacyName =
+          exercise.exerciseId === undefined &&
+          exercise.name.trim().toLocaleLowerCase('es') === normalizedName;
+        if (!matchesId && !matchesLegacyName) {
+          return [];
+        }
+
+        const setDetails = exercise.setDetails;
+        return [{
+          id: `${workout.id}-${index}`,
+          date: workout.date,
+          weightKg: setDetails
+            ? Math.max(0, ...setDetails.map(({ weightKg }) => weightKg))
+            : exercise.weightKg,
+          reps: setDetails
+            ? setDetails.reduce((total, { reps }) => total + reps, 0)
+            : exercise.sets * exercise.reps,
+          volumeKg: setDetails
+            ? setDetails.reduce((total, set) => total + set.reps * set.weightKg, 0)
+            : exercise.sets * exercise.reps * exercise.weightKg,
+        }];
+      }),
+    )
+    .sort((first, second) => first.date.getTime() - second.date.getTime());
+}
+
 export function addWorkoutSession(
   workoutInput: Partial<Workout> & Pick<Workout, 'name' | 'durationMinutes' | 'date' | 'exercises'>,
   accountEmail = 'default',
 ): Workout {
-  const workouts = getStoredWorkouts(new Date(), accountEmail);
+  const workouts = getRecordedWorkouts(accountEmail);
   const nextWorkout: Workout = {
     id: workoutInput.id ?? `workout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: workoutInput.name.trim() || 'Entrenamiento',
@@ -212,9 +266,7 @@ export function updateWorkoutSession(
 }
 
 export function createMockWorkouts(referenceDate: Date = new Date()): Workout[] {
-  const dayOffsets = [0, -1, -2, -4, -7, -9, -14, -20, -27, -35, -44, -55, -67, -80, -89];
-
-  return dayOffsets.map((dayOffset, index) => {
+  return mockWorkoutDayOffsets.map((dayOffset, index) => {
     const workout = mockWorkoutTemplates[index % mockWorkoutTemplates.length];
     const date = new Date(referenceDate);
     date.setDate(date.getDate() + dayOffset);
@@ -408,6 +460,9 @@ function normalizeExercise(exercise: unknown): WorkoutExercise | null {
   if (typeof record['name'] !== 'string' || typeof record['sets'] !== 'number' || typeof record['reps'] !== 'number' || typeof record['weightKg'] !== 'number') {
     return null;
   }
+  if (record['exerciseId'] !== undefined && typeof record['exerciseId'] !== 'string') {
+    return null;
+  }
 
   let setDetails: WorkoutSet[] | undefined;
   if (record['setDetails'] !== undefined) {
@@ -424,6 +479,7 @@ function normalizeExercise(exercise: unknown): WorkoutExercise | null {
 
   return {
     name: record['name'],
+    ...(typeof record['exerciseId'] === 'string' ? { exerciseId: record['exerciseId'] } : {}),
     sets: Math.max(0, Math.round(record['sets'])),
     reps: Math.max(0, Math.round(record['reps'])),
     weightKg: Math.max(0, Number(record['weightKg'])),

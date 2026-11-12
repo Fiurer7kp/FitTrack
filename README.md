@@ -5,7 +5,8 @@ Aplicación de seguimiento de entrenamiento construida con Angular 22 y Tailwind
 ## Funcionalidades
 
 - Registro, inicio y cierre de sesión con cuentas guardadas en el navegador.
-- Biblioteca de ejercicios con búsqueda, filtros y operaciones CRUD.
+- Biblioteca de ejercicios con sugerencias por nombre, grupo muscular automático, búsqueda y operaciones CRUD.
+- Historial por ejercicio con gráficas seleccionables de peso máximo, repeticiones y volumen.
 - Creación, edición, eliminación y detalle de rutinas semanales.
 - Registro de sesiones con ejercicios y detalle de repeticiones y peso por serie; cálculo de récords personales.
 - Calendario mensual para consultar sesiones, editarlas/eliminarlas y planificar o cancelar rutinas.
@@ -47,7 +48,3 @@ npm run build
 ```
 
 Los artefactos se generan en `dist/`.
-
-## Presentación
-
-Consulta [GUIA_PRESENTACION.md](./GUIA_PRESENTACION.md) para un guion de demostración y una explicación breve de las rutas, componentes y pruebas.

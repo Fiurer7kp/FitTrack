@@ -113,6 +113,7 @@ describe('Timer', () => {
       throw new Error('La sesión debería haberse guardado.');
     }
 
+    expect(session.exercises[0].exerciseId).toBe('bench-press');
     expect(session.exercises[0].setDetails).toEqual([
       { reps: 8, weightKg: 60 },
       { reps: 8, weightKg: 60 },
