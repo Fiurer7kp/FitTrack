@@ -94,6 +94,109 @@ const mockWorkoutTemplates: Omit<Workout, 'date'>[] = [
   },
 ];
 
+const WORKOUT_STORAGE_KEY = 'fittrack.workouts';
+
+export function getStoredWorkouts(
+  referenceDate: Date = new Date(),
+  accountEmail = 'default',
+): Workout[] {
+  if (typeof window === 'undefined') {
+    return createMockWorkouts(referenceDate);
+  }
+
+  const key = workoutStorageKey(accountEmail);
+  let stored = window.localStorage.getItem(key);
+  if (stored === null && accountEmail !== 'default') {
+    stored = window.localStorage.getItem(WORKOUT_STORAGE_KEY);
+    if (stored !== null) {
+      window.localStorage.setItem(key, stored);
+      window.localStorage.removeItem(WORKOUT_STORAGE_KEY);
+    }
+  }
+
+  if (stored === null) {
+    return createMockWorkouts(referenceDate);
+  }
+
+  const parsed: unknown = JSON.parse(stored);
+  if (!Array.isArray(parsed)) {
+    throw new Error('Los entrenamientos guardados tienen un formato inválido.');
+  }
+
+  const workouts = parsed.map((entry) => normalizeStoredWorkout(entry));
+  if (workouts.some((workout) => workout === null)) {
+    throw new Error('Una o más sesiones guardadas tienen un formato inválido.');
+  }
+
+  return workouts.filter((workout): workout is Workout => workout !== null);
+}
+
+export function addWorkoutSession(
+  workoutInput: Partial<Workout> & Pick<Workout, 'name' | 'durationMinutes' | 'date' | 'exercises'>,
+  accountEmail = 'default',
+): Workout {
+  const workouts = getStoredWorkouts(new Date(), accountEmail);
+  const nextWorkout: Workout = {
+    id: workoutInput.id ?? `workout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: workoutInput.name.trim() || 'Entrenamiento',
+    date: normalizeDate(workoutInput.date) ?? new Date(),
+    durationMinutes: Math.max(1, Math.round(Number(workoutInput.durationMinutes) || 1)),
+    caloriesBurned: Number.isFinite(workoutInput.caloriesBurned) ? Math.max(0, Math.round(workoutInput.caloriesBurned ?? 0)) : 0,
+    exercises: Array.isArray(workoutInput.exercises)
+      ? workoutInput.exercises
+          .map((exercise) => normalizeExercise(exercise))
+          .filter((exercise): exercise is WorkoutExercise => exercise !== null)
+      : [],
+  };
+
+  const nextWorkouts = [...workouts, nextWorkout].sort(
+    (first, second) => second.date.getTime() - first.date.getTime(),
+  );
+
+  persistWorkouts(nextWorkouts, accountEmail);
+  return nextWorkout;
+}
+
+export function removeWorkoutSession(id: string, accountEmail = 'default'): Workout[] {
+  const nextWorkouts = getStoredWorkouts(new Date(), accountEmail).filter((workout) => workout.id !== id);
+  persistWorkouts(nextWorkouts, accountEmail);
+  return nextWorkouts;
+}
+
+export function updateWorkoutSession(
+  id: string,
+  changes: Pick<Workout, 'name' | 'date' | 'durationMinutes' | 'caloriesBurned'>,
+  accountEmail = 'default',
+): Workout {
+  const workouts = getStoredWorkouts(new Date(), accountEmail);
+  const existing = workouts.find((workout) => workout.id === id);
+  if (!existing) {
+    throw new Error('No se encontró la sesión que quieres editar.');
+  }
+
+  const name = changes.name.trim();
+  const durationMinutes = Number(changes.durationMinutes);
+  const caloriesBurned = Number(changes.caloriesBurned);
+  if (!name || !Number.isFinite(durationMinutes) || durationMinutes < 1 ||
+      !Number.isFinite(caloriesBurned) || caloriesBurned < 0 ||
+      Number.isNaN(changes.date.getTime())) {
+    throw new Error('Revisa el nombre, fecha, duración y calorías de la sesión.');
+  }
+
+  const updated: Workout = {
+    ...existing,
+    name,
+    date: new Date(changes.date),
+    durationMinutes: Math.round(durationMinutes),
+    caloriesBurned: Math.round(caloriesBurned),
+  };
+  persistWorkouts(
+    workouts.map((workout) => (workout.id === id ? updated : workout)),
+    accountEmail,
+  );
+  return updated;
+}
+
 export function createMockWorkouts(referenceDate: Date = new Date()): Workout[] {
   const dayOffsets = [0, -1, -2, -4, -7, -9, -14, -20, -27, -35, -44, -55, -67, -80, -89];
 
@@ -197,4 +300,95 @@ function localDateKey(date: Date): string {
 
 function localDayNumber(date: Date): number {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
+}
+
+function normalizeStoredWorkout(value: unknown): Workout | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (typeof record['id'] !== 'string' || typeof record['name'] !== 'string') {
+    return null;
+  }
+
+  const date = normalizeDate(record['date']);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  if (typeof record['durationMinutes'] !== 'number' || typeof record['caloriesBurned'] !== 'number') {
+    return null;
+  }
+
+  if (!Array.isArray(record['exercises'])) {
+    return null;
+  }
+
+  const exercises = record['exercises'].map((exercise) => normalizeExercise(exercise));
+  if (exercises.some((exercise) => exercise === null)) {
+    return null;
+  }
+
+  return {
+    id: record['id'],
+    name: record['name'],
+    date,
+    durationMinutes: Math.max(1, Math.round(record['durationMinutes'])),
+    caloriesBurned: Math.max(0, Math.round(record['caloriesBurned'])),
+    exercises: exercises.filter((exercise): exercise is WorkoutExercise => exercise !== null),
+  };
+}
+
+function normalizeExercise(exercise: unknown): WorkoutExercise | null {
+  if (typeof exercise !== 'object' || exercise === null) {
+    return null;
+  }
+
+  const record = exercise as Record<string, unknown>;
+  if (typeof record['name'] !== 'string' || typeof record['sets'] !== 'number' || typeof record['reps'] !== 'number' || typeof record['weightKg'] !== 'number') {
+    return null;
+  }
+
+  return {
+    name: record['name'],
+    sets: Math.max(0, Math.round(record['sets'])),
+    reps: Math.max(0, Math.round(record['reps'])),
+    weightKg: Math.max(0, Number(record['weightKg'])),
+  };
+}
+
+function normalizeDate(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
+function workoutStorageKey(accountEmail: string): string {
+  return accountEmail === 'default'
+    ? WORKOUT_STORAGE_KEY
+    : `${WORKOUT_STORAGE_KEY}.${encodeURIComponent(accountEmail)}`;
+}
+
+function persistWorkouts(workouts: Workout[], accountEmail: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(
+    workoutStorageKey(accountEmail),
+    JSON.stringify(
+      workouts.map((workout) => ({
+        ...workout,
+        date: workout.date.toISOString(),
+      })),
+    ),
+  );
 }

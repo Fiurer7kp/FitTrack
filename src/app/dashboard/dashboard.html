@@ -35,19 +35,19 @@
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <app-metric-card
           title="Entrenamientos esta semana"
-          [value]="metrics.workoutCount + ' / ' + weeklyGoal"
-          [supportingText]="metrics.workoutCount + ' de ' + weeklyGoal + ' entrenamientos completados'"
-          [progress]="metrics.goalProgress"
+          [value]="metrics().workoutCount + ' / ' + weeklyGoal"
+          [supportingText]="metrics().workoutCount + ' de ' + weeklyGoal + ' entrenamientos completados'"
+          [progress]="metrics().goalProgress"
           progressLabel="Avance de la meta semanal de entrenamientos"
         />
         <app-metric-card
           title="Calorías quemadas"
-          [value]="metrics.caloriesBurned.toLocaleString('es') + ' kcal'"
+          [value]="metrics().caloriesBurned.toLocaleString('es') + ' kcal'"
           supportingText="Durante esta semana"
         />
         <app-metric-card
           title="Racha de días"
-          [value]="metrics.streakDays + (metrics.streakDays === 1 ? ' día' : ' días')"
+          [value]="metrics().streakDays + (metrics().streakDays === 1 ? ' día' : ' días')"
           supportingText="Días consecutivos entrenando"
         />
       </div>
@@ -137,10 +137,17 @@
           <h2 id="recent-workouts-title" class="font-heading text-xl font-semibold">Últimos entrenamientos</h2>
           <p class="mt-1 text-sm text-neutral-400">Tus 5 sesiones más recientes.</p>
         </div>
+        <a routerLink="/timer" class="btn-neon whitespace-nowrap">Registrar sesión</a>
       </div>
 
+      @if (sessionError()) {
+        <p class="mb-4 rounded-xl border border-red-500/50 bg-red-500/10 p-4 text-sm text-red-200" role="alert">
+          {{ sessionError() }}
+        </p>
+      }
+
       <div class="grid gap-3">
-        @for (workout of recentWorkouts; track workout.id) {
+        @for (workout of recentWorkouts(); track workout.id) {
           <article class="rounded-xl border border-brand-border bg-brand-card p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
             <div class="min-w-0">
               <h3 class="font-semibold text-white">{{ workout.name }}</h3>
@@ -156,6 +163,14 @@
                 <dd class="mt-1 font-medium text-white">{{ getWorkoutVolumeKg(workout).toLocaleString('es') }} kg</dd>
               </div>
             </dl>
+            <button
+              type="button"
+              class="mt-4 rounded-lg border border-red-500/50 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/10 sm:mt-0"
+              [attr.aria-label]="'Eliminar sesión ' + workout.name"
+              (click)="deleteWorkout(workout.id)"
+            >
+              Eliminar
+            </button>
           </article>
         } @empty {
           <p class="rounded-xl border border-brand-border bg-brand-card p-6 text-neutral-300">

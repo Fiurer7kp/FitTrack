@@ -1,8 +1,12 @@
 import {
+  addWorkoutSession,
   calculateWeeklyMetrics,
   getProgressPoints,
   getRecentWorkouts,
+  getStoredWorkouts,
   getWorkoutVolumeKg,
+  removeWorkoutSession,
+  updateWorkoutSession,
   Workout,
 } from './workout';
 
@@ -18,6 +22,10 @@ function workout(id: string, date: string, caloriesBurned = 300): Workout {
 }
 
 describe('dashboard workout calculations', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('calculates the current Monday-to-Sunday week and weekly goal progress', () => {
     const workouts = [
       workout('monday', '2026-11-09', 350),
@@ -87,5 +95,78 @@ describe('dashboard workout calculations', () => {
 
   it('returns an empty series when the selected range contains no weighted workouts', () => {
     expect(getProgressPoints([], 90, new Date('2026-11-10T18:00:00'))).toEqual([]);
+  });
+
+  it('falls back to demo data and then persists a real workout session', () => {
+    const demoWorkouts = getStoredWorkouts(new Date('2026-11-10T12:00:00'));
+    expect(demoWorkouts.length).toBeGreaterThan(0);
+
+    const session = addWorkoutSession({
+      name: 'Sesión real',
+      date: new Date('2026-11-11T18:30:00'),
+      durationMinutes: 45,
+      caloriesBurned: 320,
+      exercises: [{ name: 'Press de banca', sets: 4, reps: 8, weightKg: 60 }],
+    });
+
+    expect(session.name).toBe('Sesión real');
+    expect(getStoredWorkouts().some(({ id }) => id === session.id)).toBe(true);
+
+    const storedWorkouts = JSON.parse(localStorage.getItem('fittrack.workouts') ?? '[]') as Array<{ name: string }>;
+    expect(storedWorkouts.some(({ name }) => name === 'Sesión real')).toBe(true);
+  });
+
+  it('updates and deletes sessions, including persisting an empty history', () => {
+    const [session] = getStoredWorkouts(new Date('2026-11-10T12:00:00'));
+    localStorage.setItem('fittrack.workouts', JSON.stringify([session]));
+
+    const updated = updateWorkoutSession(session.id, {
+      name: 'Sesión corregida',
+      date: new Date('2026-11-11T12:00:00'),
+      durationMinutes: 50,
+      caloriesBurned: 200,
+    });
+
+    expect(updated.name).toBe('Sesión corregida');
+    expect(getStoredWorkouts()).toEqual([updated]);
+    expect(removeWorkoutSession(session.id)).toEqual([]);
+    expect(getStoredWorkouts()).toEqual([]);
+  });
+
+  it('rejects invalid session updates without changing the saved history', () => {
+    const session = addWorkoutSession({
+      name: 'Sesión válida',
+      date: new Date('2026-11-11T12:00:00'),
+      durationMinutes: 40,
+      caloriesBurned: 0,
+      exercises: [],
+    });
+
+    expect(() =>
+      updateWorkoutSession(session.id, {
+        name: ' ',
+        date: new Date('invalid'),
+        durationMinutes: 0,
+        caloriesBurned: -1,
+      }),
+    ).toThrow('Revisa el nombre, fecha, duración y calorías de la sesión.');
+    expect(getStoredWorkouts().some(({ id, name }) => id === session.id && name === 'Sesión válida')).toBe(true);
+  });
+
+  it('keeps session histories isolated by account', () => {
+    const session = addWorkoutSession(
+      {
+        name: 'Entrenamiento de Ana',
+        date: new Date('2026-11-11T12:00:00'),
+        durationMinutes: 45,
+        caloriesBurned: 0,
+        exercises: [],
+      },
+      'ana@example.com',
+    );
+
+    expect(getStoredWorkouts(new Date(), 'ana@example.com').some(({ id }) => id === session.id)).toBe(true);
+    expect(getStoredWorkouts(new Date(), 'luis@example.com').some(({ id }) => id === session.id)).toBe(false);
+    expect(localStorage.getItem('fittrack.workouts.ana%40example.com')).not.toBeNull();
   });
 });
