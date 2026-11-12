@@ -4,9 +4,10 @@ import { AuthService } from '../auth/auth.service';
 import { MetricCard } from '../metric-card/metric-card';
 import {
   calculateWeeklyMetrics,
-  createMockWorkouts,
   getProgressPoints,
   getRecentWorkouts,
+  getStoredWorkouts,
+  removeWorkoutSession,
   getWorkoutVolumeKg,
 } from './workout';
 
@@ -21,12 +22,13 @@ export class Dashboard {
   private readonly router = inject(Router);
 
   readonly weeklyGoal = 4;
-  readonly workouts = createMockWorkouts();
-  readonly metrics = calculateWeeklyMetrics(this.workouts, this.weeklyGoal);
-  readonly recentWorkouts = getRecentWorkouts(this.workouts);
+  readonly sessionError = signal<string | null>(null);
+  readonly workouts = signal(this.loadWorkouts());
+  readonly metrics = computed(() => calculateWeeklyMetrics(this.workouts(), this.weeklyGoal));
+  readonly recentWorkouts = computed(() => getRecentWorkouts(this.workouts()));
   readonly getWorkoutVolumeKg = getWorkoutVolumeKg;
   readonly progressRange = signal<30 | 90>(30);
-  readonly progressPoints = computed(() => getProgressPoints(this.workouts, this.progressRange()));
+  readonly progressPoints = computed(() => getProgressPoints(this.workouts(), this.progressRange()));
   readonly chartPolyline = computed(() =>
     this.progressPoints().map(({ x, y }) => `${x},${y}`).join(' '),
   );
@@ -51,6 +53,33 @@ export class Dashboard {
 
   setProgressRange(range: 30 | 90): void {
     this.progressRange.set(range);
+  }
+
+  private loadWorkouts() {
+    try {
+      return getStoredWorkouts(new Date(), this.auth.currentUser()?.email ?? 'default');
+    } catch (error) {
+      this.sessionError.set(
+        error instanceof Error ? error.message : 'No se pudieron cargar las sesiones guardadas.',
+      );
+      return [];
+    }
+  }
+
+  deleteWorkout(id: string): void {
+    const workout = this.workouts().find((entry) => entry.id === id);
+    if (!workout || !window.confirm(`¿Eliminar la sesión "${workout.name}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      this.workouts.set(removeWorkoutSession(id, this.auth.currentUser()?.email ?? 'default'));
+      this.sessionError.set(null);
+    } catch (error) {
+      this.sessionError.set(
+        error instanceof Error ? error.message : 'No se pudo eliminar la sesión. Inténtalo de nuevo.',
+      );
+    }
   }
 
   async logout(): Promise<void> {

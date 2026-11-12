@@ -21,6 +21,25 @@
           <button type="button" class="rounded-lg border border-brand-border px-5 py-3 text-sm text-neutral-200 transition hover:border-neutral-500" (click)="pauseStopwatch()">Pausar</button>
           <button type="button" class="rounded-lg border border-brand-border px-5 py-3 text-sm text-neutral-200 transition hover:border-neutral-500" (click)="resetStopwatch()">Reiniciar</button>
         </div>
+
+        <div class="mt-6 space-y-3 text-left">
+          <label for="session-name" class="text-sm font-medium text-neutral-300">Nombre de la sesión</label>
+          <input id="session-name" class="input w-full" type="text" [value]="sessionName()" (input)="updateSessionName($event)" maxlength="60" />
+        </div>
+
+        <div class="mt-6 flex justify-center">
+          <button type="button" class="rounded-lg bg-brand-neon px-5 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50" (click)="saveSession()" [disabled]="stopwatchSeconds() === 0">
+            Guardar sesión
+          </button>
+        </div>
+
+        @if (sessionError()) {
+          <p class="mt-4 text-sm text-red-300" role="alert">{{ sessionError() }}</p>
+        }
+
+        @if (lastSavedSession()) {
+          <p class="mt-4 text-sm text-emerald-300">Sesión guardada: {{ lastSavedSession() }}</p>
+        }
       </section>
 
       <section class="rounded-3xl border border-brand-border bg-brand-card p-8 text-center" aria-labelledby="rest-title">
