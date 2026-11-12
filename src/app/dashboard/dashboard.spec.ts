@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { ThemeService } from '../theme.service';
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {
@@ -11,6 +12,11 @@ describe('Dashboard', () => {
     currentUser: signal({ name: 'Ana', email: 'ana@example.com' }),
     logout: vi.fn(),
   };
+  const themeService = {
+    theme: signal<'dark' | 'light'>('dark'),
+    storageUnavailable: signal(false),
+    toggle: vi.fn(),
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -18,10 +24,12 @@ describe('Dashboard', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authService },
+        { provide: ThemeService, useValue: themeService },
       ],
     }).compileComponents();
 
     authService.logout.mockClear();
+    themeService.toggle.mockClear();
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -29,6 +37,20 @@ describe('Dashboard', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('keeps the sticky navigation and theme switch together beside the brand', () => {
+    const header = fixture.nativeElement.querySelector('header') as HTMLElement | null;
+    const themeButton = header?.querySelector('button[aria-label="Cambiar a modo claro"]');
+
+    expect(header?.classList.contains('sticky')).toBe(true);
+    expect(header?.querySelector('a[aria-label="FitTrack, inicio"]')).toBeTruthy();
+    expect(themeButton).toBeTruthy();
+    if (!(themeButton instanceof HTMLButtonElement)) {
+      throw new Error('El botón del tema debe estar en la barra superior.');
+    }
+    themeButton.click();
+    expect(themeService.toggle).toHaveBeenCalledOnce();
   });
 
   it('renders the weekly metrics and five recent workouts', () => {

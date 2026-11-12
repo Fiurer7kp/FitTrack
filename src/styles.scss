@@ -4,6 +4,7 @@
   --color-brand-card: #1a1a1a;
   --color-brand-border: #2d2d2d;
   --color-brand-danger: #ff3b30;
+  --color-brand-muted: #a3a3a3;
   color-scheme: dark;
 }
 
@@ -13,6 +14,7 @@ html.light {
   --color-brand-card: #ffffff;
   --color-brand-border: #d7ded5;
   --color-brand-danger: #c62828;
+  --color-brand-muted: #5b665b;
   color-scheme: light;
 }
 
@@ -48,6 +50,7 @@ html.light .text-neutral-500 {
 }
 
 html.light .text-red-300,
+html.light .text-red-200,
 html.light .text-red-400 {
   color: #b42318;
 }
@@ -67,6 +70,6 @@ html.light .btn-neon {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #39FF14;
+  outline: 2px solid var(--color-brand-neon);
   outline-offset: 2px;
 }

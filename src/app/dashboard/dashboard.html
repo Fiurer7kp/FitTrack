@@ -1,9 +1,22 @@
 <main class="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-6xl">
-    <header class="mb-10 flex items-center justify-between gap-4">
-      <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
-        Fit<span class="text-brand-neon">Track</span>
-      </a>
+    <header class="sticky top-0 z-40 mb-10 flex flex-wrap items-center justify-between gap-3 border-b border-brand-border bg-brand-black/95 py-4 backdrop-blur-sm">
+      <div class="flex flex-wrap items-center gap-3">
+        <a routerLink="/dashboard" class="font-heading text-2xl font-bold text-white" aria-label="FitTrack, inicio">
+          Fit<span class="text-brand-neon">Track</span>
+        </a>
+        <button
+          type="button"
+          class="rounded-full border border-brand-border bg-brand-card px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white"
+          [attr.aria-label]="themeService.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          (click)="themeService.toggle()"
+        >
+          {{ themeService.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro' }}
+        </button>
+        @if (themeService.storageUnavailable()) {
+          <span class="text-xs text-red-300" role="status">No se pudo guardar el tema.</span>
+        }
+      </div>
       <nav class="flex flex-wrap items-center justify-end gap-2">
         <a routerLink="/exercises" class="rounded-lg border border-brand-border px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 hover:text-white">
           Ejercicios
@@ -96,13 +109,13 @@
                 x2="584"
                 [attr.y1]="210 - (tick / chartMaxWeight()) * 192"
                 [attr.y2]="210 - (tick / chartMaxWeight()) * 192"
-                stroke="#2D2D2D"
+                stroke="var(--color-brand-border)"
                 stroke-width="1"
               />
               <text
                 x="38"
                 [attr.y]="214 - (tick / chartMaxWeight()) * 192"
-                fill="#A3A3A3"
+                fill="var(--color-brand-muted)"
                 font-size="12"
                 text-anchor="end"
               >{{ tick }} kg</text>
@@ -110,18 +123,18 @@
             <polyline
               [attr.points]="chartPolyline()"
               fill="none"
-              stroke="#39FF14"
+              stroke="var(--color-brand-neon)"
               stroke-width="3"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
             @for (point of progressPoints(); track point.id) {
-              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="#39FF14">
+              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4" fill="var(--color-brand-neon)">
                 <title>{{ point.name }} · {{ formatDate(point.date) }} · {{ point.weightKg }} kg</title>
               </circle>
             }
-            <text x="46" y="234" fill="#A3A3A3" font-size="12">Hace {{ progressRange() }} días</text>
-            <text x="584" y="234" fill="#A3A3A3" font-size="12" text-anchor="end">Hoy</text>
+            <text x="46" y="234" fill="var(--color-brand-muted)" font-size="12">Hace {{ progressRange() }} días</text>
+            <text x="584" y="234" fill="var(--color-brand-muted)" font-size="12" text-anchor="end">Hoy</text>
           </svg>
         </div>
       } @else {
@@ -165,7 +178,7 @@
             </dl>
             <button
               type="button"
-              class="mt-4 rounded-lg border border-red-500/50 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/10 sm:mt-0"
+              class="mt-4 rounded-lg border border-red-500 px-3 py-2 text-sm text-red-300 transition hover:bg-red-500/10 sm:mt-0"
               [attr.aria-label]="'Eliminar sesión ' + workout.name"
               (click)="deleteWorkout(workout.id)"
             >

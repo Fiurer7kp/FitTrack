@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { MetricCard } from '../metric-card/metric-card';
+import { ThemeService } from '../theme.service';
 import {
   calculateWeeklyMetrics,
   getProgressPoints,
@@ -20,6 +21,7 @@ import {
 export class Dashboard {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly themeService = inject(ThemeService);
 
   readonly weeklyGoal = 4;
   readonly sessionError = signal<string | null>(null);
