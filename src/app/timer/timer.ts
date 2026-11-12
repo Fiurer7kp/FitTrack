@@ -1,4 +1,6 @@
-import { Component, OnDestroy, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { AuthService } from '../auth/auth.service';
+import { addWorkoutSession } from '../dashboard/workout';
 
 @Component({
   imports: [],
@@ -7,6 +9,7 @@ import { Component, OnDestroy, signal } from '@angular/core';
   templateUrl: './timer.html',
 })
 export class Timer implements OnDestroy {
+  private readonly auth = inject(AuthService);
   readonly restPresets = [30, 60, 90, 120];
   readonly stopwatchSeconds = signal(0);
   readonly stopwatchRunning = signal(false);
@@ -15,6 +18,9 @@ export class Timer implements OnDestroy {
   readonly restRunning = signal(false);
   readonly restFinished = signal(false);
   readonly customRestInput = signal('60');
+  readonly sessionName = signal('Entrenamiento');
+  readonly lastSavedSession = signal<string | null>(null);
+  readonly sessionError = signal<string | null>(null);
 
   private stopwatchHandle: number | null = null;
   private restHandle: number | null = null;
@@ -55,6 +61,37 @@ export class Timer implements OnDestroy {
   updateCustomRestInput(event: Event): void {
     if (event.target instanceof HTMLInputElement) {
       this.customRestInput.set(event.target.value);
+    }
+  }
+
+  updateSessionName(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.sessionName.set(event.target.value);
+    }
+  }
+
+  saveSession(): void {
+    const totalSeconds = this.stopwatchSeconds();
+    if (totalSeconds <= 0) {
+      return;
+    }
+
+    try {
+      const workout = addWorkoutSession({
+        name: this.sessionName().trim() || 'Entrenamiento',
+        date: new Date(),
+        durationMinutes: Math.max(1, Math.round(totalSeconds / 60)),
+        caloriesBurned: 0,
+        exercises: [],
+      }, this.auth.currentUser()?.email ?? 'default');
+
+      this.lastSavedSession.set(workout.name);
+      this.sessionError.set(null);
+      this.resetStopwatch();
+    } catch (error) {
+      this.sessionError.set(
+        error instanceof Error ? error.message : 'No se pudo guardar la sesión. Inténtalo de nuevo.',
+      );
     }
   }
 

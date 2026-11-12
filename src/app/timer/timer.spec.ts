@@ -57,4 +57,22 @@ describe('Timer', () => {
     component.applyCustomRest();
     expect(component.restDurationSeconds()).toBe(60);
   });
+
+  it('saves a completed stopwatch session and resets the timer', () => {
+    localStorage.clear();
+    component.stopwatchSeconds.set(90);
+    component.sessionName.set('Empuje');
+    component.saveSession();
+
+    const saved = JSON.parse(localStorage.getItem('fittrack.workouts') ?? '[]') as Array<{
+      name: string;
+      durationMinutes: number;
+      caloriesBurned: number;
+    }>;
+    const session = saved.find(({ name }) => name === 'Empuje');
+
+    expect(session).toMatchObject({ durationMinutes: 2, caloriesBurned: 0 });
+    expect(component.lastSavedSession()).toBe('Empuje');
+    expect(component.stopwatchSeconds()).toBe(0);
+  });
 });
