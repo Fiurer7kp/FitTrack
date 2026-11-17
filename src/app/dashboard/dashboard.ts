@@ -2,9 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { MetricCard } from '../metric-card/metric-card';
+import { ThemeService } from '../theme.service';
 import {
   calculateWeeklyMetrics,
   getProgressPoints,
+  getPersonalRecords,
   getRecentWorkouts,
   getStoredWorkouts,
   removeWorkoutSession,
@@ -20,11 +22,13 @@ import {
 export class Dashboard {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  readonly themeService = inject(ThemeService);
 
   readonly weeklyGoal = 4;
   readonly sessionError = signal<string | null>(null);
   readonly workouts = signal(this.loadWorkouts());
   readonly metrics = computed(() => calculateWeeklyMetrics(this.workouts(), this.weeklyGoal));
+  readonly personalRecords = computed(() => getPersonalRecords(this.workouts()));
   readonly recentWorkouts = computed(() => getRecentWorkouts(this.workouts()));
   readonly getWorkoutVolumeKg = getWorkoutVolumeKg;
   readonly progressRange = signal<30 | 90>(30);

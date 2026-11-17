@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import {
   Workout,
@@ -6,19 +7,30 @@ import {
   removeWorkoutSession,
   updateWorkoutSession,
 } from '../dashboard/workout';
+import {
+  Routine,
+  ScheduledRoutine,
+  getScheduledRoutines,
+  getStoredRoutines,
+  removeScheduledRoutine,
+  scheduleRoutine,
+} from '../routines/routine';
 
 interface CalendarDay {
   date: Date | null;
   workouts: Workout[];
+  scheduledRoutines: ScheduledRoutine[];
   isToday: boolean;
 }
 
 function localDateKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 @Component({
-  imports: [],
+  imports: [RouterLink],
   selector: 'app-calendar',
   styleUrl: './calendar.scss',
   templateUrl: './calendar.html',
@@ -26,9 +38,13 @@ function localDateKey(date: Date): string {
 export class Calendar {
   private readonly auth = inject(AuthService);
   readonly sessionError = signal<string | null>(null);
+  readonly planningError = signal<string | null>(null);
   readonly workouts = signal(this.loadWorkouts());
+  readonly availableRoutines = signal(this.loadRoutines());
+  readonly scheduledRoutines = signal(this.loadSchedule());
   readonly month = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   readonly selectedDate = signal<Date | null>(null);
+  readonly selectedRoutineId = signal('');
   readonly editingWorkoutId = signal<string | null>(null);
   readonly editName = signal('');
   readonly editDate = signal('');
@@ -50,13 +66,15 @@ export class Calendar {
     return Array.from({ length: totalCells }, (_, index): CalendarDay => {
       const dayNumber = index - mondayOffset + 1;
       if (dayNumber < 1 || dayNumber > daysInMonth) {
-        return { date: null, workouts: [], isToday: false };
+        return { date: null, workouts: [], scheduledRoutines: [], isToday: false };
       }
 
       const date = new Date(month.getFullYear(), month.getMonth(), dayNumber);
+      const dateKey = localDateKey(date);
       return {
         date,
-        workouts: this.workouts().filter(({ date: workoutDate }) => localDateKey(workoutDate) === localDateKey(date)),
+        workouts: this.workouts().filter(({ date: workoutDate }) => localDateKey(workoutDate) === dateKey),
+        scheduledRoutines: this.scheduledRoutines().filter(({ date: scheduledDate }) => scheduledDate === dateKey),
         isToday: localDateKey(date) === localDateKey(today),
       };
     });
@@ -65,6 +83,12 @@ export class Calendar {
     const selected = this.selectedDate();
     return selected
       ? this.workouts().filter(({ date }) => localDateKey(date) === localDateKey(selected))
+      : [];
+  });
+  readonly selectedScheduledRoutines = computed(() => {
+    const selected = this.selectedDate();
+    return selected
+      ? this.scheduledRoutines().filter(({ date }) => date === localDateKey(selected))
       : [];
   });
 
@@ -83,6 +107,13 @@ export class Calendar {
   selectDay(date: Date | null): void {
     if (date) {
       this.selectedDate.set(date);
+      this.selectedRoutineId.set('');
+    }
+  }
+
+  updateSelectedRoutine(event: Event): void {
+    if (event.target instanceof HTMLSelectElement) {
+      this.selectedRoutineId.set(event.target.value);
     }
   }
 
@@ -167,6 +198,47 @@ export class Calendar {
     }
   }
 
+  scheduleSelectedRoutine(): void {
+    const date = this.selectedDate();
+    const routine = this.availableRoutines().find(({ id }) => id === this.selectedRoutineId());
+    const email = this.auth.currentUser()?.email;
+    if (!date || !routine || !email) {
+      this.planningError.set('Selecciona un día y una rutina para planificar.');
+      return;
+    }
+
+    try {
+      this.scheduledRoutines.set(scheduleRoutine(routine, date, email));
+      this.selectedRoutineId.set('');
+      this.planningError.set(null);
+    } catch (error) {
+      this.planningError.set(
+        error instanceof Error ? error.message : 'No se pudo planificar la rutina.',
+      );
+    }
+  }
+
+  deleteScheduledRoutine(entry: ScheduledRoutine): void {
+    if (!window.confirm(`¿Quitar "${entry.routineName}" del calendario?`)) {
+      return;
+    }
+
+    const email = this.auth.currentUser()?.email;
+    if (!email) {
+      this.planningError.set('Tu sesión terminó. Vuelve a iniciar sesión para editar el calendario.');
+      return;
+    }
+
+    try {
+      this.scheduledRoutines.set(removeScheduledRoutine(entry.id, email));
+      this.planningError.set(null);
+    } catch (error) {
+      this.planningError.set(
+        error instanceof Error ? error.message : 'No se pudo quitar la rutina planificada.',
+      );
+    }
+  }
+
   cancelEdit(): void {
     this.editingWorkoutId.set(null);
   }
@@ -187,5 +259,37 @@ export class Calendar {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private loadRoutines(): Routine[] {
+    const email = this.auth.currentUser()?.email;
+    if (!email) {
+      return [];
+    }
+
+    try {
+      return getStoredRoutines(email);
+    } catch (error) {
+      this.planningError.set(
+        error instanceof Error ? error.message : 'No se pudieron cargar las rutinas guardadas.',
+      );
+      return [];
+    }
+  }
+
+  private loadSchedule(): ScheduledRoutine[] {
+    const email = this.auth.currentUser()?.email;
+    if (!email) {
+      return [];
+    }
+
+    try {
+      return getScheduledRoutines(email);
+    } catch (error) {
+      this.planningError.set(
+        error instanceof Error ? error.message : 'No se pudieron cargar los planes del calendario.',
+      );
+      return [];
+    }
   }
 }

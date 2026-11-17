@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { addWorkoutSession } from '../dashboard/workout';
 import { ExerciseService } from './exercise.service';
 import { Exercises } from './exercises';
 
@@ -85,6 +86,78 @@ describe('Exercises', () => {
     expect(component.form.controls.name.invalid).toBe(true);
     expect(component.form.controls.sets.invalid).toBe(true);
     expect(component.form.controls.reps.invalid).toBe(true);
+  });
+
+  it('suggests common exercises and fills the muscle group when one is selected', async () => {
+    const { fixture, component } = await createComponent();
+    component.openCreate();
+    fixture.detectChanges();
+
+    const nameInput = fixture.nativeElement.querySelector('#exercise-name') as HTMLInputElement;
+    nameInput.value = 'Remo con barra';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.form.controls.muscleGroup.value).toBe('Espalda');
+    expect(fixture.nativeElement.querySelectorAll('#exercise-name-suggestions option').length).toBeGreaterThan(30);
+    expect(fixture.nativeElement.querySelector('#exercise-name-suggestions')).toBeTruthy();
+
+    const catalog = fixture.nativeElement.querySelector('#exercise-catalog') as HTMLSelectElement;
+    catalog.value = 'Elevaciones laterales';
+    catalog.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.form.controls.name.value).toBe('Elevaciones laterales');
+    expect(component.form.controls.muscleGroup.value).toBe('Hombro');
+  });
+
+  it('shows recorded weight, reps, and volume history for a selected exercise', async () => {
+    const service = TestBed.inject(ExerciseService);
+    const result = service.add({
+      name: 'Press de banca',
+      muscleGroup: 'Pecho',
+      sets: 2,
+      reps: 8,
+      weightKg: 60,
+      notes: '',
+    });
+    expect(result.success).toBe(true);
+    const exercise = service.exercises()[0];
+    if (!exercise) {
+      throw new Error('El ejercicio debería estar guardado.');
+    }
+
+    addWorkoutSession({
+      name: 'Pecho',
+      date: new Date('2026-11-10T12:00:00'),
+      durationMinutes: 45,
+      caloriesBurned: 0,
+      exercises: [{
+        name: exercise.name,
+        exerciseId: exercise.id,
+        sets: 2,
+        reps: 7,
+        weightKg: 65,
+        setDetails: [
+          { reps: 8, weightKg: 60 },
+          { reps: 6, weightKg: 65 },
+        ],
+      }],
+    }, 'ana@example.com');
+
+    const { fixture, component } = await createComponent();
+    component.toggleHistory(exercise);
+    fixture.detectChanges();
+
+    expect(component.selectedHistoryPoints()).toMatchObject([
+      { weightKg: 65, reps: 14, volumeKg: 870 },
+    ]);
+    expect(fixture.nativeElement.querySelector('#exercise-history svg')?.getAttribute('aria-label'))
+      .toContain('Peso máximo');
+    component.setHistoryMetric('volumeKg');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#exercise-history svg')?.getAttribute('aria-label'))
+      .toContain('Volumen');
   });
 
   it('creates and edits an exercise using the same side panel', async () => {
