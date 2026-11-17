@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { ThemeService } from './theme.service';
 
 @Component({
@@ -9,5 +9,6 @@ import { ThemeService } from './theme.service';
   styleUrl: './app.scss',
 })
 export class App {
+  readonly router = inject(Router);
   readonly themeService = inject(ThemeService);
 }
