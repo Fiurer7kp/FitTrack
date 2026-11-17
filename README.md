@@ -1,6 +1,6 @@
 # FitTrack
 
-Aplicación de seguimiento de entrenamiento construida con Angular 22 y Tailwind CSS 4.
+FitTrack es una aplicación web para registrar y consultar entrenamientos. Permite administrar ejercicios y rutinas, planificar sesiones en un calendario, guardar series y medidas corporales, y revisar el progreso. Está construida con Angular 22 y Tailwind CSS 4.
 
 ## Funcionalidades
 
@@ -18,9 +18,21 @@ Aplicación de seguimiento de entrenamiento construida con Angular 22 y Tailwind
 
 Los datos de ejemplo se muestran cuando todavía no hay un historial guardado. Los historiales de sesiones y medidas, las rutinas y los planes del calendario se separan por cuenta y se guardan localmente en el navegador; no hay servidor ni sincronización entre dispositivos. FitTrack es un prototipo académico, no un servicio de autenticación o almacenamiento de producción.
 
+## Conceptos del curso aplicados
+
+- **Componentes:** la aplicación se organiza en pantallas para dashboard, ejercicios, rutinas, calendario, perfil y temporizador, además del componente reutilizable `MetricCard`.
+- **Estructuras de control:** las plantillas usan `@if` para mostrar estados y mensajes según los datos, y `@for` para recorrer ejercicios, rutinas, medidas y sesiones.
+- **Signals:** `signal` mantiene estados que cambian durante el uso; `computed` deriva métricas y datos visibles. Se usan, por ejemplo, en el dashboard, calendario, perfil, temporizador y autenticación.
+- **Manejo de eventos:** eventos como `(click)` responden a acciones de botones; `(ngSubmit)` procesa el envío de formularios.
+- **Formularios:** los formularios reactivos y sus validaciones se usan en inicio de sesión/registro, ejercicios, rutinas, perfil y medidas corporales.
+- **Comunicación entre componentes:** el dashboard entrega datos al componente reutilizable `app-metric-card` mediante sus entradas requeridas. Los servicios `AuthService` y `ThemeService` comparten estado entre pantallas.
+
 ## Desarrollo
 
+Se requiere Node.js y npm compatibles con Angular 22. Desde la carpeta del proyecto, instala las dependencias y ejecuta la aplicación:
+
 ```bash
+npm install
 npm start
 ```
 
@@ -28,7 +40,7 @@ La aplicación se sirve en `http://localhost:4200/`.
 
 ## Pruebas
 
-Se requiere Chromium, instalado por Playwright:
+Se requiere Chromium. Instálalo con Playwright y ejecuta las pruebas:
 
 ```bash
 npx playwright install chromium
