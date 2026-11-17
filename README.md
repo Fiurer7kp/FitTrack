@@ -46,6 +46,3 @@ npm run build
 
 Los artefactos se generan en `dist/`.
 
-## Presentación
-
-Consulta [GUIA_PRESENTACION.md](./GUIA_PRESENTACION.md) para un guion de demostración y una explicación breve de las rutas, componentes y pruebas.
